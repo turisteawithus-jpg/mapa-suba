@@ -58,8 +58,7 @@ function useClerkAuth(): AuthState {
           isLoaded: true,
           user: null,
           openSignIn: () => {
-            const event = new CustomEvent('clerk-sign-in');
-            window.dispatchEvent(event);
+            window.location.href = window.location.pathname + '?modo=acceso';
           },
           signOut: async () => {
             try {
