@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, waitForClerk, isClerkConfigured } from '@/hooks/useAuth';
 import { SignIn } from '@clerk/clerk-react';
 import {
   Save,
@@ -177,6 +177,7 @@ export function Admin() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clerkReady, setClerkReady] = useState(false);
   const mapaRef = useRef<MapaSubaHandle>(null);
 
   useEffect(() => {
@@ -188,6 +189,13 @@ export function Admin() {
   const showMessage = useCallback((type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 4000);
+  }, []);
+
+  // Esperar a que Clerk este listo antes de mostrar SignIn
+  useEffect(() => {
+    if (!isClerkConfigured()) return;
+    const cleanup = waitForClerk(() => setClerkReady(true));
+    return cleanup;
   }, []);
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
@@ -400,6 +408,18 @@ export function Admin() {
   }
 
   if (!isSignedIn) {
+    // Si Clerk esta configurado pero aun no carga, mostrar spinner
+    if (isClerkConfigured() && !clerkReady) {
+      return (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-3" />
+            <p className="text-sm text-slate-400">Cargando autenticacion...</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
