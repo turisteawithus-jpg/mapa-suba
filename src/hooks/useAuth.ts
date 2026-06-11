@@ -1,16 +1,40 @@
 import { useState, useEffect } from 'react';
 
+const CLERK_KEY = typeof import.meta !== 'undefined'
+  ? (import.meta.env?.VITE_CLERK_PUBLISHABLE_KEY || '')
+  : '';
+
+const IS_CLERK_CONFIGURED = CLERK_KEY.length > 0 && !CLERK_KEY.includes('placeholder');
+
+interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string;
+}
+
 interface AuthState {
   isSignedIn: boolean;
   isLoaded: boolean;
-  user: any;
+  user: AuthUser | null;
   openSignIn: () => void;
   signOut: () => Promise<void>;
 }
 
-const clerkKey = import.meta.env?.VITE_CLERK_PUBLISHABLE_KEY || '';
+// Mock auth cuando Clerk NO esta configurado
+function useMockAuth(): AuthState {
+  return {
+    isSignedIn: false,
+    isLoaded: true,
+    user: null,
+    openSignIn: () => {
+      window.dispatchEvent(new CustomEvent('show-config-modal'));
+    },
+    signOut: async () => {},
+  };
+}
 
-export function useAuth(): AuthState {
+// Auth real con Clerk cuando SI esta configurado
+function useClerkAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
     isSignedIn: false,
     isLoaded: false,
@@ -20,53 +44,64 @@ export function useAuth(): AuthState {
   });
 
   useEffect(() => {
-    // Si NO hay Clerk configurado, usar mock
-    if (!clerkKey || clerkKey.includes('placeholder')) {
-      setState({
-        isSignedIn: false,
-        isLoaded: true,
-        user: null,
-        openSignIn: () => {},
-        signOut: async () => {},
-      });
-      return;
-    }
+    let mounted = true;
 
-    // Si Clerk SI esta configurado, cargarlo dinamicamente
-    let cancelled = false;
-
-    async function loadClerk() {
+    async function init() {
       try {
-        const { useAuth: useClerkAuth } = await import('@clerk/clerk-react');
-        // Clerk se cargara cuando el provider este disponible
-        if (!cancelled) {
-          setState({
-            isSignedIn: false,
-            isLoaded: true,
-            user: null,
-            openSignIn: () => {
-              window.location.href = '#/admin';
-            },
-            signOut: async () => {},
-          });
-        }
+        await import('@clerk/clerk-react');
+
+        // Usar un componente wrapper para Clerk
+        if (!mounted) return;
+
+        setState({
+          isSignedIn: false,
+          isLoaded: true,
+          user: null,
+          openSignIn: () => {
+            const event = new CustomEvent('clerk-sign-in');
+            window.dispatchEvent(event);
+          },
+          signOut: async () => {
+            try {
+              const clerk = (window as any).Clerk;
+              if (clerk) await clerk.signOut();
+            } catch {
+              // Silenciar error
+            }
+            window.location.reload();
+          },
+        });
       } catch {
-        // Fallback al mock si Clerk falla
-        if (!cancelled) {
-          setState({
-            isSignedIn: false,
-            isLoaded: true,
-            user: null,
-            openSignIn: () => {},
-            signOut: async () => {},
-          });
-        }
+        if (!mounted) return;
+        // Fallback a mock si Clerk falla al cargar
+        setState({
+          isSignedIn: false,
+          isLoaded: true,
+          user: null,
+          openSignIn: () => {
+            window.dispatchEvent(new CustomEvent('show-config-modal'));
+          },
+          signOut: async () => {},
+        });
       }
     }
 
-    loadClerk();
-    return () => { cancelled = true; };
+    init();
+    return () => { mounted = false; };
   }, []);
 
   return state;
+}
+
+export function useAuth(): AuthState {
+  // Usar Clerk solo si esta configurado
+  if (IS_CLERK_CONFIGURED) {
+    return useClerkAuth();
+  }
+  return useMockAuth();
+}
+
+// Helper para saber si Clerk esta configurado (usado en Navbar)
+export function isClerkConfigured(): boolean {
+  return IS_CLERK_CONFIGURED;
 }
