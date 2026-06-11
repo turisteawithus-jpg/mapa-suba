@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -12,7 +12,6 @@ import {
   Check,
   Loader2,
   List,
-  LayoutGrid,
   MousePointerClick,
   Route,
   CircleDot,
@@ -40,6 +39,11 @@ import { useUPZRef } from '@/hooks/useUPZRef';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
+
+// Cargar SignIn de Clerk dinámicamente (solo cuando se necesite)
+const ClerkSignIn = lazy(() =>
+  import('@clerk/clerk-react').then((mod) => ({ default: mod.SignIn }))
+);
 
 type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz';
 
@@ -401,14 +405,37 @@ export function Admin() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-cyan-500/20 flex items-center justify-center mx-auto mb-4">
-            <LayoutGrid className="w-8 h-8 text-cyan-400" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-200 mb-2">Panel de Administración</h2>
-          <p className="text-sm text-slate-400 mb-6">Debes iniciar sesión para acceder al panel de administración.</p>
-          <Button onClick={() => openSignIn()} className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-semibold">
-            Iniciar Sesión
-          </Button>
+          {/* Mostrar formulario de Clerk directamente al entrar por URL */}
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+            </div>
+          }>
+            <div className="rounded-xl overflow-hidden" style={{
+              border: '1px solid rgba(0, 243, 255, 0.15)',
+              boxShadow: '0 0 40px rgba(0, 243, 255, 0.05)',
+            }}>
+              <ClerkSignIn
+                routing="hash"
+                signUpUrl="#/admin"
+                fallbackRedirectUrl="#/admin"
+                appearance={{
+                  elements: {
+                    rootBox: { background: 'transparent' },
+                    card: { background: 'rgba(15, 23, 42, 0.95)', border: 'none' },
+                    headerTitle: { color: '#e2e8f0' },
+                    headerSubtitle: { color: '#94a3b8' },
+                    socialButtonsBlockButton: { border: '1px solid rgba(100, 116, 139, 0.3)' },
+                    formFieldLabel: { color: '#94a3b8' },
+                    formFieldInput: { background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(100, 116, 139, 0.3)', color: '#e2e8f0' },
+                    footerActionLink: { color: '#00f3ff' },
+                    primaryButton: { background: '#00f3ff', color: '#0f172a', fontWeight: '600' },
+                    primaryButtonHover: { background: '#22d3ee' },
+                  },
+                }}
+              />
+            </div>
+          </Suspense>
         </div>
       </div>
     );
