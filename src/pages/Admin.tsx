@@ -102,6 +102,7 @@ interface PuntoFormData {
   imagen_descarga_url: string;
   video_url: string;
   orden: string;
+  notas: NotaPin[];
 }
 
 const emptyPuntoForm: PuntoFormData = {
@@ -116,6 +117,7 @@ const emptyPuntoForm: PuntoFormData = {
   imagen_descarga_url: '',
   video_url: '',
   orden: '1',
+  notas: [],
 };
 
 // ========== NOTA FORM ==========
@@ -227,42 +229,32 @@ export function Admin() {
   }, [tab, upzRefSeleccionada, setCentroUPZ, showMessage]);
 
   // ===== PIN CRUD =====
-  const handlePinSubmit = async (e: React.FormEvent) => {
+  const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const pinData = {
-        titulo: pinForm.titulo,
-        descripcion: pinForm.descripcion,
-        latitud: parseFloat(pinForm.latitud),
-        longitud: parseFloat(pinForm.longitud),
-        upz: pinForm.upz,
-        barrio: pinForm.barrio,
-        direccion_referencia: pinForm.direccion_referencia || undefined,
-        imagen_url: pinForm.imagen_url,
-        imagen_descarga_url: pinForm.imagen_descarga_url,
-        video_url: pinForm.video_url,
-        notas: pinForm.notas,
-      };
-      if (editingPinId) {
-        const result = await editPin(editingPinId, pinData);
-        if (result) {
-          showMessage('success', 'Pin actualizado correctamente');
-          setEditingPinId(null);
-          setPinForm(emptyPinForm);
-        } else showMessage('error', 'Error al actualizar el pin');
-      } else {
-        const result = await addPin(pinData);
-        if (result) {
-          showMessage('success', 'Pin creado correctamente');
-          setPinForm(emptyPinForm);
-        } else showMessage('error', 'Error al crear el pin');
-      }
-    } catch (err) {
-      showMessage('error', err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setIsSubmitting(false);
+    const pinData = {
+      titulo: pinForm.titulo,
+      descripcion: pinForm.descripcion,
+      latitud: parseFloat(pinForm.latitud),
+      longitud: parseFloat(pinForm.longitud),
+      upz: pinForm.upz,
+      barrio: pinForm.barrio,
+      direccion_referencia: pinForm.direccion_referencia || undefined,
+      imagen_url: pinForm.imagen_url || '',
+      imagen_descarga_url: pinForm.imagen_descarga_url || '',
+      video_url: pinForm.video_url || '',
+      notas: pinForm.notas,
+    };
+    if (editingPinId) {
+      editPin(editingPinId, pinData);
+      showMessage('success', 'Pin actualizado correctamente');
+      setEditingPinId(null);
+    } else {
+      addPin(pinData);
+      showMessage('success', 'Pin creado correctamente');
     }
+    setPinForm(emptyPinForm);
+    setIsSubmitting(false);
   };
 
   const handleEditPin = (pin: Pin) => {
@@ -336,7 +328,7 @@ export function Admin() {
         imagen_descarga_url: puntoForm.imagen_descarga_url,
         video_url: puntoForm.video_url,
         orden: parseInt(puntoForm.orden),
-        notas: [],
+        notas: puntoForm.notas,
       });
       showMessage('success', 'Punto actualizado correctamente');
       setEditingPuntoId(null);
@@ -353,7 +345,7 @@ export function Admin() {
         imagen_descarga_url: puntoForm.imagen_descarga_url,
         video_url: puntoForm.video_url,
         orden: parseInt(puntoForm.orden),
-        notas: [],
+        notas: puntoForm.notas,
       });
       showMessage('success', 'Punto creado correctamente');
     }
@@ -730,8 +722,8 @@ export function Admin() {
                         </Select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-slate-300 text-xs">URL de Imagen *</Label>
-                        <Input type="url" value={pinForm.imagen_url} onChange={(e) => setPinForm({ ...pinForm, imagen_url: e.target.value })} placeholder="https://ejemplo.com/imagen.jpg" required
+                        <Label className="text-slate-300 text-xs">URL de Imagen</Label>
+                        <Input type="url" value={pinForm.imagen_url} onChange={(e) => setPinForm({ ...pinForm, imagen_url: e.target.value })} placeholder="https://ejemplo.com/imagen.jpg"
                           className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50" />
                       </div>
                       <div className="space-y-1.5">
@@ -977,8 +969,8 @@ export function Admin() {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-slate-300 text-xs">URL de Imagen *</Label>
-                        <Input type="url" value={puntoForm.imagen_url} onChange={(e) => setPuntoForm({ ...puntoForm, imagen_url: e.target.value })} placeholder="https://ejemplo.com/imagen.jpg" required
+                        <Label className="text-slate-300 text-xs">URL de Imagen</Label>
+                        <Input type="url" value={puntoForm.imagen_url} onChange={(e) => setPuntoForm({ ...puntoForm, imagen_url: e.target.value })} placeholder="https://ejemplo.com/imagen.jpg"
                           className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50" />
                       </div>
                       <div className="space-y-1.5">
@@ -986,6 +978,100 @@ export function Admin() {
                         <Input type="number" value={puntoForm.orden} onChange={(e) => setPuntoForm({ ...puntoForm, orden: e.target.value })} min={1}
                           className="bg-slate-900 border-slate-700 text-slate-200 font-mono text-sm" />
                       </div>
+
+                      {/* Notas del Punto */}
+                      <div className="border-t border-slate-800 pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                            <StickyNote className="w-3.5 h-3.5 text-emerald-400" />
+                            Notas ({puntoForm.notas.length})
+                          </h4>
+                          {!mostrarNotaEditor && (
+                            <button
+                              type="button"
+                              onClick={() => { setMostrarNotaEditor(true); setEditandoNotaIndex(null); }}
+                              className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3" /> Agregar
+                            </button>
+                          )}
+                        </div>
+                        {puntoForm.notas.length > 0 && (
+                          <div className="space-y-1.5">
+                            {puntoForm.notas.map((nota, idx) => (
+                              <div
+                                key={nota.id}
+                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-slate-900/60 border border-slate-800"
+                              >
+                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: nota.color }} />
+                                <span className="text-xs text-slate-300 flex-1 truncate">{nota.nombre}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditandoNotaIndex(idx);
+                                    setMostrarNotaEditor(true);
+                                  }}
+                                  className="text-slate-500 hover:text-cyan-400"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPuntoForm(prev => ({
+                                      ...prev,
+                                      notas: prev.notas.filter((_, i) => i !== idx),
+                                    }));
+                                  }}
+                                  className="text-slate-500 hover:text-red-400"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {mostrarNotaEditor && (
+                          <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-3">
+                            <NotaEditor
+                              nota={editandoNotaIndex !== null ? puntoForm.notas[editandoNotaIndex] : null}
+                              onSave={(nombre, color, contenido) => {
+                                if (editandoNotaIndex !== null) {
+                                  setPuntoForm(prev => ({
+                                    ...prev,
+                                    notas: prev.notas.map((n, i) =>
+                                      i === editandoNotaIndex
+                                        ? { ...n, nombre, color, contenido }
+                                        : n
+                                    ),
+                                  }));
+                                } else {
+                                  setPuntoForm(prev => ({
+                                    ...prev,
+                                    notas: [
+                                      ...prev.notas,
+                                      {
+                                        id: `nota-${Date.now()}`,
+                                        nombre,
+                                        color,
+                                        contenido,
+                                        creado_at: new Date().toISOString(),
+                                      },
+                                    ],
+                                  }));
+                                }
+                                setMostrarNotaEditor(false);
+                                setEditandoNotaIndex(null);
+                              }}
+                              onClose={() => {
+                                setMostrarNotaEditor(false);
+                                setEditandoNotaIndex(null);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex gap-3 pt-4">
                         <Button type="submit" className="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold">
                           <Save className="w-4 h-4 mr-2" />
@@ -1185,7 +1271,7 @@ export function Admin() {
                                 <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{punto.descripcion}</p>
                               </div>
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button variant="ghost" size="sm" onClick={() => { setEditingPuntoId(punto.id); setPuntoForm({ titulo: punto.titulo, descripcion: punto.descripcion, latitud: punto.latitud.toString(), longitud: punto.longitud.toString(), linea_id: punto.linea_id, tamano: punto.tamano, color: punto.color, imagen_url: punto.imagen_url, imagen_descarga_url: punto.imagen_descarga_url, video_url: punto.video_url, orden: punto.orden.toString() }); setSubTab('form'); }}
+                                <Button variant="ghost" size="sm" onClick={() => { setEditingPuntoId(punto.id); setPuntoForm({ titulo: punto.titulo, descripcion: punto.descripcion, latitud: punto.latitud.toString(), longitud: punto.longitud.toString(), linea_id: punto.linea_id, tamano: punto.tamano, color: punto.color, imagen_url: punto.imagen_url, imagen_descarga_url: punto.imagen_descarga_url, video_url: punto.video_url, orden: punto.orden.toString(), notas: punto.notas }); setSubTab('form'); }}
                                   className="text-slate-400 hover:text-purple-400 hover:bg-purple-500/10"><Edit3 className="w-4 h-4" /></Button>
                                 <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(`punto-${punto.id}`)}
                                   className="text-slate-400 hover:text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
