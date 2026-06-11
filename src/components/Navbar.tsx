@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Shield, LogIn, LogOut, User, Settings, X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, isClerkConfigured } from '@/hooks/useAuth';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -160,9 +160,16 @@ export function Navbar() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowConfig(true)}
-                className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50"
-              >
+                onClick={() => {
+                  if (isClerkConfigured()) {
+                    window.location.href = '#/admin';
+                  } else {
+                    setShowConfig(true);
+                  }
+                }}
+                className="border-cyan-500/30 text-cyan-400 
+              hover:bg-cyan-500/10 hover:border-cyan-500/50"
+              > 
                 <LogIn className="w-4 h-4 mr-1.5" />
                 Ingresar
               </Button>
