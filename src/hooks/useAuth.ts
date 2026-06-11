@@ -23,112 +23,72 @@ interface AuthState {
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
     isSignedIn: false,
-    isLoaded: !IS_CLERK_CONFIGURED, // Cargado inmediatamente si no hay Clerk
+    isLoaded: false,
     user: null,
-    openSignIn: () => {
-      window.location.href = '/#/admin';
-    },
+    openSignIn: () => {},
     signOut: async () => {},
   });
 
   useEffect(() => {
-    // Si Clerk NO esta configurado, usar mock
+    // Si Clerk NO esta configurado, marcar como cargado con mock
     if (!IS_CLERK_CONFIGURED) {
       setState({
         isSignedIn: false,
         isLoaded: true,
         user: null,
-        openSignIn: () => {
-          window.location.href = '/#/admin';
-        },
+        openSignIn: () => {},
         signOut: async () => {},
       });
       return;
     }
 
-    // Si Clerk SI esta configurado, escuchar cambios de auth
+    // Clerk configurado — esperar a que este listo
     let mounted = true;
 
-    function checkClerkAuth() {
-      try {
-        const clerk = (window as any).Clerk;
-        if (!clerk || !mounted) return;
+    function initAuth() {
+      const clerk = (window as any).Clerk;
+      if (!clerk || !clerk.loaded || !mounted) return false;
 
-        const isSignedIn = clerk.session?.status === 'active';
-        const user = clerk.user;
+      const isSignedIn = clerk.session?.status === 'active';
+      const user = clerk.user;
 
-        setState({
-          isSignedIn,
-          isLoaded: true,
-          user: user ? {
-            id: user.id,
-            email: user.primaryEmailAddress?.emailAddress || '',
-            fullName: user.fullName || '',
-          } : null,
-          openSignIn: () => {
-            window.location.href = '/#/admin';
-          },
-          signOut: async () => {
-            await clerk.signOut();
-            window.location.reload();
-          },
-        });
-      } catch {
-        // Si falla, usar mock
-        if (mounted) {
-          setState({
-            isSignedIn: false,
-            isLoaded: true,
-            user: null,
-            openSignIn: () => {
-              window.location.href = '/#/admin';
-            },
-            signOut: async () => {},
-          });
-        }
-      }
+      setState({
+        isSignedIn,
+        isLoaded: true,
+        user: user ? {
+          id: user.id,
+          email: user.primaryEmailAddress?.emailAddress || '',
+          fullName: user.fullName || '',
+        } : null,
+        openSignIn: () => {},
+        signOut: async () => {
+          await clerk.signOut();
+          window.location.href = '/#/admin';
+        },
+      });
+      return true;
     }
 
-    // Esperar a que Clerk este listo
+    // Intentar cada 200ms hasta que Clerk este listo
     const interval = setInterval(() => {
-      const clerk = (window as any).Clerk;
-      if (clerk?.loaded) {
+      if (initAuth()) {
         clearInterval(interval);
-        checkClerkAuth();
-
-        // Suscribirse a cambios de sesion
-        clerk.addListener((resources: any) => {
-          if (!mounted) return;
-          const isSignedIn = resources.session?.status === 'active';
-          const user = resources.user;
-          setState(prev => ({
-            ...prev,
-            isSignedIn,
-            user: user ? {
-              id: user.id,
-              email: user.primaryEmailAddress?.emailAddress || '',
-              fullName: user.fullName || '',
-            } : null,
-          }));
-        });
       }
-    }, 100);
+    }, 200);
 
-    // Timeout de seguridad
+    // Timeout de seguridad: 8 segundos
     const timeout = setTimeout(() => {
       clearInterval(interval);
-      if (mounted && !state.isLoaded) {
-        setState({
+      if (mounted) {
+        setState(prev => prev.isLoaded ? prev : {
           isSignedIn: false,
           isLoaded: true,
           user: null,
-          openSignIn: () => {
-            window.location.href = '/#/admin';
-          },
+          openSignIn: () => {},
           signOut: async () => {},
         });
       }
-    }, 5000);
+    }, 8000);
 
     return () => {
       mounted = false;
@@ -140,7 +100,31 @@ export function useAuth(): AuthState {
   return state;
 }
 
-// Helper para saber si Clerk esta configurado
 export function isClerkConfigured(): boolean {
   return IS_CLERK_CONFIGURED;
+}
+
+// Esperar a que Clerk JS SDK este cargado en window
+export function waitForClerk(callback: () => void): () => void {
+  if (!IS_CLERK_CONFIGURED) {
+    return () => {};
+  }
+
+  let cancelled = false;
+  const interval = setInterval(() => {
+    if (cancelled) {
+      clearInterval(interval);
+      return;
+    }
+    const clerk = (window as any).Clerk;
+    if (clerk?.loaded) {
+      clearInterval(interval);
+      callback();
+    }
+  }, 200);
+
+  return () => {
+    cancelled = true;
+    clearInterval(interval);
+  };
 }
