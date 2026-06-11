@@ -1,0 +1,565 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 7%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 222 47% 4%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 187 100% 50%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 243, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 243, 255, 0.4);
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(0, 243, 255, 0.3);
+    color: white;
+  }
+}
+
+@layer components {
+  /* Leaflet Custom Styles */
+  .leaflet-container {
+    background: #0a0a0a !important;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .leaflet-control-zoom {
+    border: none !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+  }
+
+  .leaflet-control-zoom a {
+    background: rgba(15, 23, 42, 0.9) !important;
+    color: #00f3ff !important;
+    border: 1px solid rgba(0, 243, 255, 0.2) !important;
+    backdrop-filter: blur(10px);
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 18px !important;
+    transition: all 0.2s;
+  }
+
+  .leaflet-control-zoom a:hover {
+    background: rgba(0, 243, 255, 0.1) !important;
+    border-color: rgba(0, 243, 255, 0.4) !important;
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #64748b !important;
+    font-size: 10px !important;
+    backdrop-filter: blur(4px);
+    padding: 2px 8px !important;
+  }
+
+  .leaflet-control-attribution a {
+    color: #00f3ff !important;
+  }
+
+  /* Custom pin styles */
+  .custom-neon-pin {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .admin-click-marker {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* Tooltip styles */
+  .leaflet-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(0, 243, 255, 0.2) !important;
+    border-radius: 8px !important;
+    color: #e2e8f0 !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .leaflet-tooltip-left:before,
+  .leaflet-tooltip-right:before {
+    border-left-color: rgba(0, 243, 255, 0.2) !important;
+    border-right-color: rgba(0, 243, 255, 0.2) !important;
+  }
+
+  .leaflet-tooltip-top:before,
+  .leaflet-tooltip-bottom:before {
+    border-top-color: rgba(0, 243, 255, 0.2) !important;
+    border-bottom-color: rgba(0, 243, 255, 0.2) !important;
+  }
+
+  .upz-tooltip {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid rgba(0, 243, 255, 0.3) !important;
+    color: #00f3ff !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+  }
+
+  .pin-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(0, 243, 255, 0.3) !important;
+    color: #e2e8f0 !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+  }
+
+  /* Scrollbar thin variant */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 243, 255, 0.15);
+    border-radius: 2px;
+  }
+
+  /* Neon glow utilities */
+  .neon-glow {
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+  }
+
+  .neon-glow-strong {
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.3), 0 0 10px rgba(0, 243, 255, 0.2);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+  }
+
+  /* Leaflet popup custom */
+  .leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.98) !important;
+    border: 1px solid rgba(0, 243, 255, 0.2) !important;
+    border-radius: 12px !important;
+    color: #e2e8f0 !important;
+    backdrop-filter: blur(10px);
+  }
+
+  .leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.98) !important;
+    border: 1px solid rgba(0, 243, 255, 0.2) !important;
+  }
+
+  .leaflet-popup-close-button {
+    color: #00f3ff !important;
+    font-size: 18px !important;
+  }
+
+  /* Line point marker */
+  .punto-linea-marker {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* Note block marker */
+  .bloque-nota-marker {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .bloque-nota-marker:hover {
+    filter: brightness(1.3);
+  }
+
+  /* Line tooltip */
+  .linea-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(255, 107, 53, 0.3) !important;
+    color: #ff6b35 !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+  }
+
+  /* Delimitacion oficial - limite de localidad tooltip */
+  .limite-localidad-tooltip {
+    background: rgba(45, 35, 30, 0.98) !important;
+    border: 2px solid #8d6e63 !important;
+    color: #d7ccc8 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Delimitacion oficial - limite de UPZ tooltip */
+  .limite-upz-tooltip {
+    background: rgba(35, 30, 25, 0.95) !important;
+    border: 1px solid #6d4c41 !important;
+    color: #bcaaa4 !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    letter-spacing: 0.03em;
+  }
+
+  /* Point tooltip */
+  .punto-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    color: #e2e8f0 !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+  }
+
+  /* Prose styles for notepad editor */
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #1a1a1a;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+  }
+
+  .prose h1 { font-size: 1.75em; }
+  .prose h2 { font-size: 1.5em; }
+  .prose h3 { font-size: 1.25em; }
+  .prose h4 { font-size: 1.1em; }
+
+  .prose p {
+    margin-bottom: 1em;
+    line-height: 1.75;
+  }
+
+  .prose ul, .prose ol {
+    margin-bottom: 1em;
+    padding-left: 1.5em;
+  }
+
+  .prose ul {
+    list-style-type: disc;
+  }
+
+  .prose ol {
+    list-style-type: decimal;
+  }
+
+  .prose li {
+    margin-bottom: 0.25em;
+  }
+
+  .prose b, .prose strong {
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .prose i, .prose em {
+    font-style: italic;
+  }
+
+  .prose u {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* Nota contenido publico - estilos para HTML renderizado */
+  .nota-contenido-publico b,
+  .nota-contenido-publico strong {
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+
+  .nota-contenido-publico i,
+  .nota-contenido-publico em {
+    font-style: italic;
+    color: #94a3b8;
+  }
+
+  .nota-contenido-publico u {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(0, 243, 255, 0.4);
+  }
+
+  .nota-contenido-publico ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0.5em 0;
+  }
+
+  .nota-contenido-publico ul li {
+    position: relative;
+    padding-left: 1em;
+    margin-bottom: 0.35em;
+    color: #94a3b8;
+  }
+
+  .nota-contenido-publico ul li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: rgba(0, 243, 255, 0.5);
+    font-weight: 700;
+  }
+
+  .nota-contenido-publico ol {
+    list-style-type: decimal;
+    padding-left: 1.2em;
+    margin: 0.5em 0;
+  }
+
+  .nota-contenido-publico ol li {
+    margin-bottom: 0.35em;
+    color: #94a3b8;
+  }
+
+  .nota-contenido-publico p {
+    margin-bottom: 0.5em;
+  }
+
+  .nota-contenido-publico p:last-child {
+    margin-bottom: 0;
+  }
+
+  .nota-contenido-publico h2,
+  .nota-contenido-publico h3,
+  .nota-contenido-publico h4 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin: 0.75em 0 0.35em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .nota-contenido-publico::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .nota-contenido-publico::-webkit-scrollbar-thumb {
+    background: rgba(0, 243, 255, 0.15);
+    border-radius: 2px;
+  }
+
+  /* Nota detalle - vista completa */
+  .nota-detalle-contenido h1,
+  .nota-detalle-contenido h2,
+  .nota-detalle-contenido h3,
+  .nota-detalle-contenido h4 {
+    color: #e2e8f0;
+    font-weight: 700;
+    margin: 1.5em 0 0.6em;
+    letter-spacing: 0.01em;
+  }
+
+  .nota-detalle-contenido h1 {
+    font-size: 1.35em;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+    padding-bottom: 0.3em;
+  }
+
+  .nota-detalle-contenido h2 {
+    font-size: 1.15em;
+  }
+
+  .nota-detalle-contenido h3 {
+    font-size: 1em;
+    color: #94a3b8;
+  }
+
+  .nota-detalle-contenido p {
+    margin-bottom: 0.85em;
+  }
+
+  .nota-detalle-contenido p:last-child {
+    margin-bottom: 0;
+  }
+
+  .nota-detalle-contenido b,
+  .nota-detalle-contenido strong {
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+
+  .nota-detalle-contenido i,
+  .nota-detalle-contenido em {
+    font-style: italic;
+    color: #94a3b8;
+  }
+
+  .nota-detalle-contenido u {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(0, 243, 255, 0.35);
+  }
+
+  .nota-detalle-contenido ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.75em 0;
+  }
+
+  .nota-detalle-contenido ul li {
+    position: relative;
+    padding-left: 1.2em;
+    margin-bottom: 0.4em;
+    color: #a3b3c8;
+  }
+
+  .nota-detalle-contenido ul li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: rgba(0, 243, 255, 0.45);
+    font-weight: 700;
+    font-size: 1.1em;
+  }
+
+  .nota-detalle-contenido ol {
+    list-style: decimal;
+    padding-left: 1.4em;
+    margin: 0.75em 0;
+  }
+
+  .nota-detalle-contenido ol li {
+    margin-bottom: 0.4em;
+    padding-left: 0.3em;
+    color: #a3b3c8;
+  }
+
+  .nota-detalle-contenido blockquote {
+    border-left: 2px solid rgba(0, 243, 255, 0.2);
+    padding: 0.5em 1em;
+    margin: 1em 0;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 0 6px 6px 0;
+    color: #94a3b8;
+    font-style: italic;
+  }
+
+  .nota-detalle-contenido img {
+    max-width: 100%;
+    border-radius: 8px;
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    margin: 0.75em 0;
+  }
+
+  .nota-detalle-contenido a {
+    color: #00f3ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.25);
+    transition: border-color 0.15s;
+  }
+
+  .nota-detalle-contenido a:hover {
+    border-bottom-color: rgba(0, 243, 255, 0.6);
+  }
+
+  .nota-detalle-contenido table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+  }
+
+  .nota-detalle-contenido th {
+    background: rgba(15, 23, 42, 0.7);
+    color: #e2e8f0;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.5em 0.75em;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+  }
+
+  .nota-detalle-contenido td {
+    padding: 0.45em 0.75em;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+    color: #a3b3c8;
+  }
+
+  .nota-detalle-contenido tr:hover td {
+    background: rgba(15, 23, 42, 0.3);
+  }
+
+  .prose blockquote {
+    border-left: 3px solid #d4c5b0;
+    padding-left: 1em;
+    margin-left: 0;
+    margin-bottom: 1em;
+    color: #555;
+    font-style: italic;
+  }
+}
+
+@layer utilities {
+  /* Animación de pulso para pines */
+  @keyframes pinPulse {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.8), 0 0 40px rgba(0, 243, 255, 0.3);
+    }
+  }
+
+  .animate-pin-pulse {
+    animation: pinPulse 2s ease-in-out infinite;
+  }
+
+  /* Line clamp */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
