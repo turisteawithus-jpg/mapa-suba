@@ -1,133 +1,74 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Pin } from '@/types';
-import {
-  getPines,
-  createPin,
-  updatePin,
-  deletePin,
-  subscribeToPines,
-} from '@/lib/supabase';
 import { pinesDemo } from '@/data/pines-demo';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-// Only consider Supabase configured if URL is a REAL Supabase URL (not placeholder)
-const hasSupabase = supabaseUrl.includes('.supabase.co') && !supabaseUrl.includes('placeholder') && supabaseKey.length > 20;
-
 export function usePines() {
-  const [pines, setPines] = useState<Pin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [pines, setPines] = useState<Pin[]>(pinesDemo);
+  const [loading, setLoading] = useState(false);
 
-  const fetchPines = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      if (!hasSupabase) {
-        setPines(pinesDemo);
-        setError(null);
-        setLoading(false);
-        return;
-      }
-      
-      const data = await getPines();
-      setPines(data || []);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching pines:', err);
-      setPines(hasSupabase ? [] : pinesDemo);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Cargar desde localStorage al iniciar
   useEffect(() => {
-    fetchPines();
-  }, [fetchPines]);
-
-  useEffect(() => {
-    let channel: ReturnType<typeof subscribeToPines> | null = null;
-    
     try {
-      channel = subscribeToPines((payload: any) => {
-        if (payload.eventType === 'INSERT') {
-          setPines((prev) => [payload.new, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          setPines((prev) =>
-            prev.map((p) => (p.id === payload.new.id ? payload.new : p))
-          );
-        } else if (payload.eventType === 'DELETE') {
-          setPines((prev) => prev.filter((p) => p.id !== payload.old.id));
-        }
-      });
-    } catch (err) {
-      console.warn('Realtime subscription not available:', err);
-    }
-
-    return () => {
-      if (channel) {
-        try {
-          channel.unsubscribe();
-        } catch {
-          // Ignore
+      const saved = localStorage.getItem('suba_pines');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPines(parsed);
         }
       }
-    };
+    } catch {
+      // Ignorar errores de localStorage
+    }
+    setLoading(false);
   }, []);
+
+  // Guardar en localStorage cuando cambian
+  useEffect(() => {
+    try {
+      localStorage.setItem('suba_pines', JSON.stringify(pines));
+    } catch {
+      // Ignorar errores
+    }
+  }, [pines]);
 
   const addPin = useCallback(
-    async (pin: Omit<Pin, 'id' | 'creado_at'>) => {
-      try {
-        const result = await createPin(pin);
-        if (result) {
-          setPines((prev) => [result, ...prev]);
-        }
-        return result;
-      } catch (err) {
-        console.error('Error adding pin:', err);
-        return null;
-      }
+    (pin: Omit<Pin, 'id' | 'creado_at'>): Pin => {
+      const newPin: Pin = {
+        ...pin,
+        id: `pin-${Date.now()}`,
+        creado_at: new Date().toISOString(),
+      };
+      setPines((prev) => [newPin, ...prev]);
+      return newPin;
     },
     []
   );
 
   const editPin = useCallback(
-    async (id: string, pin: Partial<Pin>) => {
-      try {
-        const result = await updatePin(id, pin);
-        if (result) {
-          setPines((prev) =>
-            prev.map((p) => (p.id === id ? result : p))
-          );
-        }
-        return result;
-      } catch (err) {
-        console.error('Error editing pin:', err);
-        return null;
-      }
+    (id: string, updates: Partial<Pin>): Pin | null => {
+      let updated: Pin | null = null;
+      setPines((prev) =>
+        prev.map((p) => {
+          if (p.id === id) {
+            updated = { ...p, ...updates };
+            return updated;
+          }
+          return p;
+        })
+      );
+      return updated;
     },
     []
   );
 
-  const removePin = useCallback(async (id: string) => {
-    try {
-      const success = await deletePin(id);
-      if (success) {
-        setPines((prev) => prev.filter((p) => p.id !== id));
-      }
-      return success;
-    } catch (err) {
-      console.error('Error removing pin:', err);
-      return false;
-    }
+  const removePin = useCallback((id: string) => {
+    setPines((prev) => prev.filter((p) => p.id !== id));
+    return true;
   }, []);
 
   return {
     pines,
     loading,
-    error,
-    fetchPines,
     addPin,
     editPin,
     removePin,
