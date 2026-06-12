@@ -21,6 +21,17 @@ function loadFromStorage(): Pin[] {
 export function usePines() {
   const [pines, setPines] = useState<Pin[]>(loadFromStorage);
 
+  // Al montar, forzar recarga desde localStorage (navegacion admin -> mapa)
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setPines(parsed);
+      } catch { /* ignore */ }
+    }
+  }, []);
+
   // Guardar en localStorage y notificar a otros componentes
   const saveAndNotify = useCallback((newPines: Pin[]) => {
     try {
