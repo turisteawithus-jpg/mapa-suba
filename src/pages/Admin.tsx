@@ -37,7 +37,7 @@ import type { MapaSubaHandle } from '@/components/MapaSuba';
 import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
-import { useUPZAdmin } from '@/hooks/useUPZAdmin';
+import { useUPZRef } from '@/hooks/useUPZRef';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
