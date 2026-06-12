@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User, Settings, X, Map } from 'lucide-react';
+import { LogOut, User, Settings, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -118,15 +118,12 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             {isSignedIn ? (
               <>
-                {/* Email del admin logueado - visible siempre */}
                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-900/80 rounded-lg border border-cyan-500/20">
                   <User className="w-4 h-4 text-cyan-400" />
                   <span className="text-sm text-slate-300">
                     {(user as any)?.primaryEmailAddress?.emailAddress || 'Admin'}
                   </span>
                 </div>
-
-                {/* Cuando estamos en /admin: mostrar boton "Ver Mapa" para volver */}
                 {isAdmin && (
                   <Link to="/">
                     <Button
@@ -134,13 +131,10 @@ export function Navbar() {
                       size="sm"
                       className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50"
                     >
-                      <Map className="w-4 h-4 mr-1.5" />
                       Ver Mapa
                     </Button>
                   </Link>
                 )}
-
-                {/* Boton de cerrar sesion - visible siempre cuando esta logueado */}
                 <Button
                   variant="ghost"
                   size="sm"
