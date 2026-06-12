@@ -33,6 +33,18 @@ export function useLineas() {
   const [lineas, setLineas] = useState<Linea[]>(loadLineas);
   const [puntos, setPuntos] = useState<PuntoLinea[]>(loadPuntos);
 
+  // Al montar, forzar recarga desde localStorage (navegacion admin -> mapa)
+  useEffect(() => {
+    const savedLineas = localStorage.getItem(STORAGE_KEY_LINEAS);
+    if (savedLineas !== null) {
+      try { const p = JSON.parse(savedLineas); if (Array.isArray(p)) setLineas(p); } catch { /* */ }
+    }
+    const savedPuntos = localStorage.getItem(STORAGE_KEY_PUNTOS);
+    if (savedPuntos !== null) {
+      try { const p = JSON.parse(savedPuntos); if (Array.isArray(p)) setPuntos(p); } catch { /* */ }
+    }
+  }, []);
+
   // Guardar y notificar
   const saveLineas = useCallback((newLineas: Linea[]) => {
     try { localStorage.setItem(STORAGE_KEY_LINEAS, JSON.stringify(newLineas)); } catch { /* */ }
