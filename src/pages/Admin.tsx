@@ -20,6 +20,7 @@ import {
   Crosshair,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Navbar } from '@/components/Navbar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -36,7 +37,7 @@ import type { MapaSubaHandle } from '@/components/MapaSuba';
 import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
-import { useUPZRef } from '@/hooks/useUPZRef';
+import { useUPZAdmin } from '@/hooks/useUPZAdmin';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
@@ -149,7 +150,7 @@ export function Admin() {
   const { pines, loading: pinesLoading, addPin, editPin, removePin } = usePines();
   const { lineas, puntos, addLinea, editLinea, removeLinea, addPunto, editPunto, removePunto } = useLineas();
   const { notas, addNota, editNota, removeNota } = useNotas();
-  const { centros: centrosUPZ, setCentroUPZ, resetDefaults: resetUPZDefaults } = useUPZRef();
+  const { centros: centrosUPZ, updateCentro: setCentroUPZ } = useUPZAdmin();
 
   const [tab, setTab] = useState<AdminTab>('pins');
   // UPZ seleccionada para definir punto de referencia
@@ -177,10 +178,6 @@ export function Admin() {
   const [mostrarNotaEditor, setMostrarNotaEditor] = useState(false);
   const [editandoNotaIndex, setEditandoNotaIndex] = useState<number | null>(null);
 
-  // Estados para edición manual de coordenadas UPZ
-  const [upzLatInput, setUpzLatInput] = useState<string>('');
-  const [upzLngInput, setUpzLngInput] = useState<string>('');
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clerkReady, setClerkReady] = useState(false);
@@ -204,23 +201,9 @@ export function Admin() {
     return cleanup;
   }, []);
 
-  // Sincronizar inputs de coordenadas UPZ cuando cambia la selección
-  useEffect(() => {
-    if (upzRefSeleccionada && centrosUPZ[upzRefSeleccionada]) {
-      const [lat, lng] = centrosUPZ[upzRefSeleccionada];
-      setUpzLatInput(lat.toFixed(6));
-      setUpzLngInput(lng.toFixed(6));
-    } else {
-      setUpzLatInput('');
-      setUpzLngInput('');
-    }
-  }, [upzRefSeleccionada, centrosUPZ]);
-
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (tab === 'refupz' && upzRefSeleccionada) {
       setCentroUPZ(upzRefSeleccionada, lat, lng);
-      setUpzLatInput(lat.toFixed(6));
-      setUpzLngInput(lng.toFixed(6));
       showMessage('success', `Punto de referencia de "${upzRefSeleccionada}" actualizado: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     } else if (tab === 'pins') {
       setPinForm((prev) => ({
@@ -404,25 +387,6 @@ export function Admin() {
     setNotaForm(emptyNotaForm);
   };
 
-  const handleGuardarUPZCoords = () => {
-    if (!upzRefSeleccionada) {
-      showMessage('error', 'Selecciona una UPZ primero');
-      return;
-    }
-    const lat = parseFloat(upzLatInput);
-    const lng = parseFloat(upzLngInput);
-    if (isNaN(lat) || isNaN(lng)) {
-      showMessage('error', 'Latitud y longitud deben ser números válidos');
-      return;
-    }
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      showMessage('error', 'Coordenadas fuera de rango válido');
-      return;
-    }
-    setCentroUPZ(upzRefSeleccionada, lat, lng);
-    showMessage('success', `Coordenadas de "${upzRefSeleccionada}" guardadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-  };
-
   const loading = pinesLoading;
 
   if (!isLoaded || loading) {
@@ -496,8 +460,10 @@ export function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 pt-16">
-      {/* Alert Messages */}
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-slate-950 pt-16">
+        {/* Alert Messages */}
       <AnimatePresence>
         {message && (
           <motion.div
@@ -602,7 +568,7 @@ export function Admin() {
           )}
 
           {tab === 'refupz' ? (
-            /* ===== REFERENCIA UPZ LAYOUT - EDITABLE ===== */
+            /* ===== REFERENCIA UPZ LAYOUT ===== */
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-0 h-[calc(100vh-7rem)]">
               {/* Map */}
               <div className="h-[50vh] xl:h-full relative">
@@ -620,26 +586,22 @@ export function Admin() {
                   <p className="text-xs text-cyan-400 flex items-center gap-1.5">
                     <Crosshair className="w-3 h-3" />
                     {upzRefSeleccionada
-                      ? `Clic en el mapa o edita las coordenadas de: ${upzRefSeleccionada}`
-                      : 'Selecciona una UPZ de la lista para editar sus coordenadas'}
+                      ? `Clic en el mapa para definir referencia de: ${upzRefSeleccionada}`
+                      : 'Selecciona una UPZ de la lista para definir su punto de referencia'}
                   </p>
                 </div>
               </div>
 
-              {/* UPZ Editor Panel */}
+              {/* UPZ List */}
               <div className="p-4 xl:p-6 overflow-y-auto bg-slate-950">
-                <div className="max-w-lg mx-auto space-y-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-2">
-                      <Crosshair className="w-5 h-5 text-cyan-400" />
-                      Puntos de Referencia UPZ
-                    </h2>
-                    <p className="text-xs text-slate-400">
-                      Selecciona una UPZ de la lista y edita sus coordenadas manualmente o haz clic en el mapa.
-                    </p>
-                  </div>
-
-                  {/* UPZ List */}
+                <div className="max-w-lg mx-auto">
+                  <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-4">
+                    <Crosshair className="w-5 h-5 text-cyan-400" />
+                    Puntos de Referencia UPZ
+                  </h2>
+                  <p className="text-xs text-slate-400 mb-4">
+                    Selecciona una UPZ y haz clic en el mapa para definir dónde centrará el mapa cuando un usuario la seleccione.
+                  </p>
                   <div className="space-y-2">
                     {upzData.map((upz) => {
                       const centro = centrosUPZ[upz.nombre];
@@ -672,7 +634,7 @@ export function Admin() {
                             )}
                           </div>
                           {isSelected && (
-                            <span className="text-[10px] text-cyan-400 font-medium flex-shrink-0">Editando</span>
+                            <span className="text-[10px] text-cyan-400 font-medium flex-shrink-0">Seleccionado</span>
                           )}
                           {centro && !isSelected && (
                             <MapPin className="w-3 h-3 text-slate-600 flex-shrink-0" />
@@ -680,80 +642,6 @@ export function Admin() {
                         </button>
                       );
                     })}
-                  </div>
-
-                  {/* Manual Coordinate Editor */}
-                  {upzRefSeleccionada && (
-                    <div className="border border-cyan-500/20 rounded-lg p-4 bg-cyan-500/5 space-y-3">
-                      <h3 className="text-sm font-semibold text-cyan-400 flex items-center gap-2">
-                        <Edit3 className="w-4 h-4" />
-                        Editar coordenadas de: {upzRefSeleccionada}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-slate-300 text-xs">Latitud</Label>
-                          <Input
-                            type="text"
-                            value={upzLatInput}
-                            onChange={(e) => setUpzLatInput(e.target.value)}
-                            placeholder="4.743100"
-                            className="bg-slate-900 border-slate-700 text-slate-200 font-mono text-sm focus:border-cyan-500/50"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-slate-300 text-xs">Longitud</Label>
-                          <Input
-                            type="text"
-                            value={upzLngInput}
-                            onChange={(e) => setUpzLngInput(e.target.value)}
-                            placeholder="-74.074000"
-                            className="bg-slate-900 border-slate-700 text-slate-200 font-mono text-sm focus:border-cyan-500/50"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          onClick={handleGuardarUPZCoords}
-                          className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-semibold text-xs"
-                        >
-                          <Save className="w-3.5 h-3.5 mr-1.5" />
-                          Guardar coordenadas
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            const c = centrosUPZ[upzRefSeleccionada];
-                            if (c) {
-                              setUpzLatInput(c[0].toFixed(6));
-                              setUpzLngInput(c[1].toFixed(6));
-                            }
-                          }}
-                          className="border-slate-700 text-slate-400 hover:bg-slate-800 text-xs"
-                        >
-                          <X className="w-3.5 h-3.5 mr-1.5" />
-                          Revertir
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reset Defaults */}
-                  <div className="pt-2 border-t border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm('¿Restaurar todas las coordenadas UPZ a sus valores por defecto?')) {
-                          resetUPZDefaults();
-                          showMessage('success', 'Coordenadas restauradas a valores por defecto');
-                        }
-                      }}
-                      className="text-xs text-slate-500 hover:text-red-400 transition-colors flex items-center gap-1.5"
-                    >
-                      <AlertTriangle className="w-3 h-3" />
-                      Restaurar coordenadas por defecto
-                    </button>
                   </div>
                 </div>
               </div>
@@ -1454,5 +1342,6 @@ export function Admin() {
         </main>
       </div>
     </div>
+    </>
   );
 }
