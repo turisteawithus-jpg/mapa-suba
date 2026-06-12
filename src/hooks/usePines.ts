@@ -1,131 +1,76 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Linea, PuntoLinea } from '@/types';
-import { lineasDemo, puntosLineaDemo } from '@/data/lineas-demo';
+import type { Pin } from '@/types';
+import { pinesDemo } from '@/data/pines-demo';
 
-export function useLineas() {
-  const [lineas, setLineas] = useState<Linea[]>([]);
-  const [puntos, setPuntos] = useState<PuntoLinea[]>([]);
+export function usePines() {
+  const [pines, setPines] = useState<Pin[]>(pinesDemo);
   const [loading, setLoading] = useState(false);
 
   // Cargar desde localStorage al iniciar
   useEffect(() => {
     try {
-      const savedLineas = localStorage.getItem('suba_lineas');
-      const savedPuntos = localStorage.getItem('suba_puntos_linea');
-      if (savedLineas) {
-        const parsed = JSON.parse(savedLineas);
+      const saved = localStorage.getItem('suba_pines');
+      if (saved) {
+        const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setLineas(parsed);
-        } else {
-          setLineas(lineasDemo);
+          setPines(parsed);
         }
-      } else {
-        setLineas(lineasDemo);
-      }
-      if (savedPuntos) {
-        const parsed = JSON.parse(savedPuntos);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPuntos(parsed);
-        } else {
-          setPuntos(puntosLineaDemo);
-        }
-      } else {
-        setPuntos(puntosLineaDemo);
       }
     } catch {
-      setLineas(lineasDemo);
-      setPuntos(puntosLineaDemo);
+      // Ignorar errores de localStorage
     }
     setLoading(false);
   }, []);
 
-  // Guardar en localStorage
+  // Guardar en localStorage cuando cambian
   useEffect(() => {
     try {
-      localStorage.setItem('suba_lineas', JSON.stringify(lineas));
-    } catch { /* ignore */ }
-  }, [lineas]);
+      localStorage.setItem('suba_pines', JSON.stringify(pines));
+    } catch {
+      // Ignorar errores
+    }
+  }, [pines]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('suba_puntos_linea', JSON.stringify(puntos));
-    } catch { /* ignore */ }
-  }, [puntos]);
-
-  // LINEAS
-  const addLinea = useCallback(
-    (linea: Omit<Linea, 'id' | 'creado_at'>): Linea => {
-      const newLinea: Linea = {
-        ...linea,
-        id: `linea-${Date.now()}`,
+  const addPin = useCallback(
+    (pin: Omit<Pin, 'id' | 'creado_at'>): Pin => {
+      const newPin: Pin = {
+        ...pin,
+        id: `pin-${Date.now()}`,
         creado_at: new Date().toISOString(),
       };
-      setLineas((prev) => [newLinea, ...prev]);
-      return newLinea;
+      setPines((prev) => [newPin, ...prev]);
+      return newPin;
     },
     []
   );
 
-  const editLinea = useCallback(
-    (id: string, updates: Partial<Linea>) => {
-      setLineas((prev) =>
-        prev.map((l) => (l.id === id ? { ...l, ...updates } : l))
+  const editPin = useCallback(
+    (id: string, updates: Partial<Pin>): Pin | null => {
+      let updated: Pin | null = null;
+      setPines((prev) =>
+        prev.map((p) => {
+          if (p.id === id) {
+            updated = { ...p, ...updates };
+            return updated;
+          }
+          return p;
+        })
       );
+      return updated;
     },
     []
   );
 
-  const removeLinea = useCallback((id: string) => {
-    setLineas((prev) => prev.filter((l) => l.id !== id));
-    setPuntos((prev) => prev.filter((p) => p.linea_id !== id));
+  const removePin = useCallback((id: string) => {
+    setPines((prev) => prev.filter((p) => p.id !== id));
+    return true;
   }, []);
-
-  // PUNTOS
-  const addPunto = useCallback(
-    (punto: Omit<PuntoLinea, 'id' | 'creado_at'>): PuntoLinea => {
-      const newPunto: PuntoLinea = {
-        ...punto,
-        id: `punto-${Date.now()}`,
-        creado_at: new Date().toISOString(),
-      };
-      setPuntos((prev) => [...prev, newPunto]);
-      return newPunto;
-    },
-    []
-  );
-
-  const editPunto = useCallback(
-    (id: string, updates: Partial<PuntoLinea>) => {
-      setPuntos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-      );
-    },
-    []
-  );
-
-  const removePunto = useCallback((id: string) => {
-    setPuntos((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-
-  const getPuntosByLinea = useCallback(
-    (lineaId: string) => {
-      return puntos
-        .filter((p) => p.linea_id === lineaId)
-        .sort((a, b) => a.orden - b.orden);
-    },
-    [puntos]
-  );
 
   return {
-    lineas,
-    puntos,
+    pines,
     loading,
-    addLinea,
-    editLinea,
-    removeLinea,
-    addPunto,
-    editPunto,
-    removePunto,
-    getPuntosByLinea,
+    addPin,
+    editPin,
+    removePin,
   };
 }
