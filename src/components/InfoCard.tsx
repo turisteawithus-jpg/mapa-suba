@@ -260,7 +260,7 @@ export function InfoCard({ pin, puntoLinea, onClose }: InfoCardProps) {
                 </motion.div>
               )}
 
-              {/* Coordinates */}
+              {/* Coordinates + Google Maps */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -279,7 +279,7 @@ export function InfoCard({ pin, puntoLinea, onClose }: InfoCardProps) {
                   className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium border transition-all bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50"
                 >
                   <Navigation className="w-3.5 h-3.5" />
-                  Cómo llegar con Google Maps
+                  Como llegar con Google Maps
                 </a>
               </motion.div>
 
