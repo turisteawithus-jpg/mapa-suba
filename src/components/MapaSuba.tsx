@@ -132,9 +132,11 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
         const map = L.map(containerRef.current, {
           center: [4.7431, -74.074],
           zoom: 13,
-          zoomControl: true,
+          zoomControl: false,
           attributionControl: false,
         });
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         L.tileLayer(
           'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
