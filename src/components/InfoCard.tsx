@@ -9,6 +9,7 @@ import {
   Calendar,
   Play,
   Route,
+  Navigation,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Pin, PuntoLinea, NotaPin } from '@/types';
@@ -264,11 +265,22 @@ export function InfoCard({ pin, puntoLinea, onClose }: InfoCardProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.28 }}
-                className="flex items-center gap-2 text-xs text-slate-500 font-mono bg-slate-900/50 px-3 py-2 rounded-lg border border-slate-800"
+                className="space-y-2"
               >
-                <span>Lat: {data.latitud.toFixed(6)}</span>
-                <span className="text-slate-700">|</span>
-                <span>Lng: {data.longitud.toFixed(6)}</span>
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-mono bg-slate-900/50 px-3 py-2 rounded-lg border border-slate-800">
+                  <span>Lat: {data.latitud.toFixed(6)}</span>
+                  <span className="text-slate-700">|</span>
+                  <span>Lng: {data.longitud.toFixed(6)}</span>
+                </div>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${data.latitud},${data.longitud}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium border transition-all bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  Cómo llegar con Google Maps
+                </a>
               </motion.div>
 
               {/* Image */}
