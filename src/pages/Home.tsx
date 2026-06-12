@@ -54,7 +54,7 @@ export function Home() {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-slate-950">
       {/* Search Bar */}
-      <div className="absolute top-16 left-0 right-0 z-[1000] px-4 pointer-events-none">
+      <div className="absolute top-4 left-0 right-0 z-[1000] px-4 pointer-events-none">
         <div className="pointer-events-auto max-w-md mx-auto">
           <Buscador onSeleccionar={handleBuscar} />
         </div>
@@ -66,7 +66,7 @@ export function Home() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="absolute top-28 left-4 z-[1000] space-y-2"
+          className="absolute top-16 left-4 z-[1000] space-y-2"
         >
           <div className="bg-slate-950/60 backdrop-blur-sm border border-cyan-500/20 rounded-lg px-3 py-2">
             <div className="flex items-center gap-2 text-xs text-slate-400">
