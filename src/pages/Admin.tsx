@@ -150,7 +150,7 @@ export function Admin() {
   const { pines, loading: pinesLoading, addPin, editPin, removePin } = usePines();
   const { lineas, puntos, addLinea, editLinea, removeLinea, addPunto, editPunto, removePunto } = useLineas();
   const { notas, addNota, editNota, removeNota } = useNotas();
-  const { centros: centrosUPZ, updateCentro: setCentroUPZ } = useUPZAdmin();
+  const { centros: centrosUPZ, setCentroUPZ } = useUPZRef();
 
   const [tab, setTab] = useState<AdminTab>('pins');
   // UPZ seleccionada para definir punto de referencia
