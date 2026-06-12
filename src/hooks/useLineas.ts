@@ -1,56 +1,70 @@
-import { useState, useEffect, useCallback } from 'react';
 import type { Linea, PuntoLinea } from '@/types';
 import { lineasDemo, puntosLineaDemo } from '@/data/lineas-demo';
 
-export function useLineas() {
-  const [lineas, setLineas] = useState<Linea[]>([]);
-  const [puntos, setPuntos] = useState<PuntoLinea[]>([]);
-  const [loading, setLoading] = useState(false);
+const STORAGE_KEY_LINEAS = 'suba_lineas';
+const STORAGE_KEY_PUNTOS = 'suba_puntos_linea';
 
-  // Cargar desde localStorage al iniciar
-  useEffect(() => {
-    try {
-      const savedLineas = localStorage.getItem('suba_lineas');
-      const savedPuntos = localStorage.getItem('suba_puntos_linea');
-      if (savedLineas) {
-        const parsed = JSON.parse(savedLineas);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setLineas(parsed);
-        } else {
-          setLineas(lineasDemo);
-        }
-      } else {
-        setLineas(lineasDemo);
-      }
-      if (savedPuntos) {
-        const parsed = JSON.parse(savedPuntos);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPuntos(parsed);
-        } else {
-          setPuntos(puntosLineaDemo);
-        }
-      } else {
-        setPuntos(puntosLineaDemo);
-      }
-    } catch {
-      setLineas(lineasDemo);
-      setPuntos(puntosLineaDemo);
+function loadLineasFromStorage(): Linea[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_LINEAS);
+    // Si hay ALGO en localStorage (incluso [] vacio), usarlo.
+    // Solo usar datos demo si NUNCA se ha guardado nada.
+    if (saved !== null) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
     }
-    setLoading(false);
-  }, []);
+  } catch { /* ignore */ }
+  return lineasDemo;
+}
+
+function loadPuntosFromStorage(): PuntoLinea[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_PUNTOS);
+    if (saved !== null) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch { /* ignore */ }
+  return puntosLineaDemo;
+}
+
+export function useLineas() {
+  const [lineas, setLineas] = useState<Linea[]>(loadLineasFromStorage);
+  const [puntos, setPuntos] = useState<PuntoLinea[]>(loadPuntosFromStorage);
+  const [loading] = useState(false);
 
   // Guardar en localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('suba_lineas', JSON.stringify(lineas));
+      localStorage.setItem(STORAGE_KEY_LINEAS, JSON.stringify(lineas));
     } catch { /* ignore */ }
   }, [lineas]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('suba_puntos_linea', JSON.stringify(puntos));
+      localStorage.setItem(STORAGE_KEY_PUNTOS, JSON.stringify(puntos));
     } catch { /* ignore */ }
   }, [puntos]);
+
+  // Escuchar cambios desde otras rutas
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY_LINEAS && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setLineas(parsed);
+        } catch { /* ignore */ }
+      }
+      if (e.key === STORAGE_KEY_PUNTOS && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) setPuntos(parsed);
+        } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // LINEAS
   const addLinea = useCallback(
