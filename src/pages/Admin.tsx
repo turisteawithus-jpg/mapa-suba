@@ -37,7 +37,7 @@ import type { MapaSubaHandle } from '@/components/MapaSuba';
 import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
-import { useUPZRef } from '@/hooks/useUPZRef';
+import { useUPZAdmin } from '@/hooks/useUPZAdmin';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
@@ -81,6 +81,9 @@ interface LineaFormData {
   descripcion: string;
   color: string;
   grosor: number;
+  snapToRoad: boolean;
+  cerrada: boolean;
+  filtrar: boolean;
 }
 
 const emptyLineaForm: LineaFormData = {
@@ -88,6 +91,9 @@ const emptyLineaForm: LineaFormData = {
   descripcion: '',
   color: '#00f3ff',
   grosor: 4,
+  snapToRoad: false,
+  cerrada: false,
+  filtrar: false,
 };
 
 // ========== PUNTO FORM ==========
@@ -150,7 +156,7 @@ export function Admin() {
   const { pines, loading: pinesLoading, addPin, editPin, removePin } = usePines();
   const { lineas, puntos, addLinea, editLinea, removeLinea, addPunto, editPunto, removePunto } = useLineas();
   const { notas, addNota, editNota, removeNota } = useNotas();
-  const { centros: centrosUPZ, setCentroUPZ } = useUPZRef();
+  const { centros: centrosUPZ, updateCentro: setCentroUPZ } = useUPZAdmin();
 
   const [tab, setTab] = useState<AdminTab>('pins');
   // UPZ seleccionada para definir punto de referencia
@@ -278,31 +284,52 @@ export function Admin() {
   };
 
   // ===== LINEA CRUD =====
-  const handleLineaSubmit = (e: React.FormEvent) => {
+  const handleLineaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (lineCoords.length < 2) {
       showMessage('error', 'Agrega al menos 2 puntos a la línea (clic en el mapa)');
       return;
     }
+
+    let finalCoords = lineCoords;
+
+    // Si snapToRoad esta activo, calcular ruta por vias con OSRM
+    if (lineaForm.snapToRoad && lineCoords.length >= 2) {
+      try {
+        const coordsStr = lineCoords.map((c) => `${c[1]},${c[0]}`).join(';');
+        const res = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`
+        );
+        const data = await res.json();
+        if (data.routes && data.routes[0]) {
+          finalCoords = data.routes[0].geometry.coordinates.map(
+            (c: number[]) => [c[1], c[0]] as [number, number]
+          );
+          showMessage('success', 'Ruta calculada por las vías correctamente');
+        }
+      } catch {
+        showMessage('error', 'No se pudo calcular la ruta por vías. Se usaran coordenadas directas.');
+      }
+    }
+
+    const lineaData = {
+      nombre: lineaForm.nombre,
+      descripcion: lineaForm.descripcion,
+      color: lineaForm.color,
+      grosor: lineaForm.grosor,
+      coordenadas: finalCoords,
+      waypoints: lineCoords,
+      snapToRoad: lineaForm.snapToRoad,
+      cerrada: lineaForm.cerrada,
+      filtrar: lineaForm.filtrar,
+    };
+
     if (editingLineaId) {
-      editLinea(editingLineaId, {
-        nombre: lineaForm.nombre,
-        descripcion: lineaForm.descripcion,
-        color: lineaForm.color,
-        grosor: lineaForm.grosor,
-        coordenadas: lineCoords,
-      });
+      editLinea(editingLineaId, lineaData);
       showMessage('success', 'Línea actualizada correctamente');
       setEditingLineaId(null);
     } else {
-      addLinea({
-        nombre: lineaForm.nombre,
-        descripcion: lineaForm.descripcion,
-        color: lineaForm.color,
-        grosor: lineaForm.grosor,
-        coordenadas: lineCoords,
-        visible: true,
-      });
+      addLinea({ ...lineaData, visible: true });
       showMessage('success', 'Línea creada correctamente');
     }
     setLineaForm(emptyLineaForm);
@@ -879,6 +906,56 @@ export function Admin() {
                         <Slider value={[lineaForm.grosor]} onValueChange={(v) => setLineaForm({ ...lineaForm, grosor: v[0] })} min={1} max={10} step={1}
                           className="py-2" />
                       </div>
+
+                      {/* Opciones de linea avanzadas */}
+                      <div className="space-y-2 border border-slate-800 rounded-lg p-3 bg-slate-900/30">
+                        <p className="text-xs text-slate-400 font-medium mb-2">Opciones avanzadas</p>
+
+                        {/* Seguir vias */}
+                        <label className="flex items-center gap-2.5 cursor-pointer group">
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${lineaForm.snapToRoad ? 'bg-orange-500 border-orange-500' : 'border-slate-600 group-hover:border-slate-500'}`}>
+                            {lineaForm.snapToRoad && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={lineaForm.snapToRoad}
+                            onChange={(e) => setLineaForm({ ...lineaForm, snapToRoad: e.target.checked })}
+                            className="sr-only"
+                          />
+                          <span className="text-xs text-slate-300">Seguir vías (calcula ruta por calles)</span>
+                        </label>
+
+                        {/* Cerrar figura */}
+                        <label className="flex items-center gap-2.5 cursor-pointer group">
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${lineaForm.cerrada ? 'bg-orange-500 border-orange-500' : 'border-slate-600 group-hover:border-slate-500'}`}>
+                            {lineaForm.cerrada && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={lineaForm.cerrada}
+                            onChange={(e) => setLineaForm({ ...lineaForm, cerrada: e.target.checked })}
+                            className="sr-only"
+                          />
+                          <span className="text-xs text-slate-300">Cerrar figura (conecta último punto con el primero)</span>
+                        </label>
+
+                        {/* Filtro tecnologico - solo visible si cerrada */}
+                        {lineaForm.cerrada && (
+                          <label className="flex items-center gap-2.5 cursor-pointer group ml-5">
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${lineaForm.filtrar ? 'bg-cyan-500 border-cyan-500' : 'border-slate-600 group-hover:border-slate-500'}`}>
+                              {lineaForm.filtrar && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={lineaForm.filtrar}
+                              onChange={(e) => setLineaForm({ ...lineaForm, filtrar: e.target.checked })}
+                              className="sr-only"
+                            />
+                            <span className="text-xs text-slate-300">Aplicar filtro tecnológico translúcido</span>
+                          </label>
+                        )}
+                      </div>
+
                       <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-3">
                         <p className="text-xs text-slate-400 mb-2">Puntos de la línea ({lineCoords.length}):</p>
                         {lineCoords.length === 0 ? (
@@ -1228,7 +1305,7 @@ export function Admin() {
                                 <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{linea.descripcion}</p>
                               </div>
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button variant="ghost" size="sm" onClick={() => { setEditingLineaId(linea.id); setLineaForm({ nombre: linea.nombre, descripcion: linea.descripcion, color: linea.color, grosor: linea.grosor }); setLineCoords(linea.coordenadas); setSubTab('form'); }}
+                                <Button variant="ghost" size="sm" onClick={() => { setEditingLineaId(linea.id); setLineaForm({ nombre: linea.nombre, descripcion: linea.descripcion, color: linea.color, grosor: linea.grosor, snapToRoad: linea.snapToRoad || false, cerrada: linea.cerrada || false, filtrar: linea.filtrar || false }); setLineCoords(linea.coordenadas); setSubTab('form'); }}
                                   className="text-slate-400 hover:text-orange-400 hover:bg-orange-500/10"><Edit3 className="w-4 h-4" /></Button>
                                 <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(`linea-${linea.id}`)}
                                   className="text-slate-400 hover:text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
