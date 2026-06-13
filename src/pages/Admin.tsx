@@ -37,7 +37,7 @@ import type { MapaSubaHandle } from '@/components/MapaSuba';
 import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
-import { useUPZAdmin } from '@/hooks/useUPZAdmin';
+import { useUPZRef } from '@/hooks/useUPZRef';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
@@ -156,7 +156,7 @@ export function Admin() {
   const { pines, loading: pinesLoading, addPin, editPin, removePin } = usePines();
   const { lineas, puntos, addLinea, editLinea, removeLinea, addPunto, editPunto, removePunto } = useLineas();
   const { notas, addNota, editNota, removeNota } = useNotas();
-  const { centros: centrosUPZ, updateCentro: setCentroUPZ } = useUPZAdmin();
+  const { centros: centrosUPZ, setCentroUPZ } = useUPZRef();
 
   const [tab, setTab] = useState<AdminTab>('pins');
   // UPZ seleccionada para definir punto de referencia
