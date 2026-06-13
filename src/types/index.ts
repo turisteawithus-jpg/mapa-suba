@@ -48,6 +48,14 @@ export interface Linea {
   coordenadas: [number, number][];
   visible: boolean;
   creado_at: string;
+  // Waypoints: puntos de control para definir la ruta por vías específicas
+  waypoints?: [number, number][];
+  // Si es true, la línea sigue las vías (snap-to-road) usando los waypoints
+  snapToRoad?: boolean;
+  // Si es true, la línea forma una figura cerrada (último punto conecta con el primero)
+  cerrada?: boolean;
+  // Si es true y la línea está cerrada, aplica filtro tecnológico translúcido del color de la línea
+  filtrar?: boolean;
 }
 
 export interface BloqueNota {
