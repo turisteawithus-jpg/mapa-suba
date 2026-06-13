@@ -1,4 +1,4 @@
-import type { Linea, PuntoLinea } from '@/types';
+mport type { Linea, PuntoLinea } from '@/types';
 
 // Líneas principales de Suba - rutas y avenidas importantes
 export const lineasDemo: Linea[] = [
