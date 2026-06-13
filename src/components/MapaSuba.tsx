@@ -94,7 +94,7 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const adminMarkerRef = useRef<L.Marker | null>(null);
-  const lineasRef = useRef<L.Polyline[]>([]);
+  const lineasRef = useRef<(L.Polyline | L.Polygon)[]>([]);
   const puntosRef = useRef<L.Marker[]>([]);
 
   const [mapReady, setMapReady] = useState(false);
@@ -207,30 +207,111 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
 
     lineas.forEach((linea) => {
       if (!linea.visible) return;
-      const polyline = L.polyline(linea.coordenadas, {
-        color: linea.color,
-        weight: linea.grosor,
-        opacity: 0.75,
-        lineCap: 'round',
-        lineJoin: 'round',
-        dashArray: linea.id === lineaSeleccionada?.id ? undefined : '8, 4',
-      })
-        .addTo(mapRef.current!)
-        .bindTooltip(linea.nombre, {
-          permanent: false,
-          direction: 'top',
-          className: 'linea-tooltip',
+
+      const isSelected = linea.id === lineaSeleccionada?.id;
+      const coords = linea.cerrada
+        ? [...linea.coordenadas, linea.coordenadas[0]]
+        : linea.coordenadas;
+
+      // Si la linea esta cerrada y tiene filtro, dibujar poligono con fill translucido
+      if (linea.cerrada) {
+        const polygon = L.polygon(linea.coordenadas, {
+          color: linea.color,
+          weight: linea.grosor,
+          opacity: 0.9,
+          fillColor: linea.color,
+          fillOpacity: linea.filtrar ? 0.15 : 0.08,
+          lineCap: 'round',
+          lineJoin: 'round',
+          dashArray: isSelected ? undefined : '8, 4',
+          className: linea.filtrar ? 'linea-con-filtro' : undefined,
+        })
+          .addTo(mapRef.current!)
+          .bindTooltip(linea.nombre, {
+            permanent: false,
+            direction: 'top',
+            className: 'linea-tooltip',
+          });
+
+        polygon.on('click', () => {
+          onLineaSelect?.(linea);
         });
 
-      polyline.on('click', () => {
-        onLineaSelect?.(linea);
-      });
+        // Si tiene filtro tecnologico, agregar patron SVG
+        if (linea.filtrar) {
+          const svgPattern = `
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="tech-${linea.id}" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="12" stroke="${linea.color}" stroke-width="1.5" opacity="0.25"/>
+                  <line x1="6" y1="0" x2="6" y2="12" stroke="${linea.color}" stroke-width="0.5" opacity="0.15"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#tech-${linea.id})"/>
+            </svg>
+          `;
+          const blob = new Blob([svgPattern], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          polygon.setStyle({ fillPattern: url } as any);
+        }
 
-      // Bring lines to back so they don't block pins/points
-      polyline.bringToBack();
-      lineasRef.current.push(polyline);
+        lineasRef.current.push(polygon);
+      } else {
+        // Linea abierta: polyline normal
+        const polyline = L.polyline(coords, {
+          color: linea.color,
+          weight: linea.grosor,
+          opacity: 0.75,
+          lineCap: 'round',
+          lineJoin: 'round',
+          dashArray: isSelected ? undefined : '8, 4',
+        })
+          .addTo(mapRef.current!)
+          .bindTooltip(linea.nombre, {
+            permanent: false,
+            direction: 'top',
+            className: 'linea-tooltip',
+          });
+
+        polyline.on('click', () => {
+          onLineaSelect?.(linea);
+        });
+
+        // Bring lines to back so they don't block pins/points
+        polyline.bringToBack();
+        lineasRef.current.push(polyline);
+      }
     });
   }, [lineas, lineaSeleccionada, mapReady, onLineaSelect]);
+
+  // Draw waypoints (visible en modo admin)
+  const waypointsRef = useRef<L.CircleMarker[]>([]);
+  useEffect(() => {
+    if (!mapRef.current || !mapReady || !isAdmin) return;
+    waypointsRef.current.forEach((w) => w.remove());
+    waypointsRef.current = [];
+
+    lineas.forEach((linea) => {
+      if (!linea.visible || !linea.waypoints || linea.waypoints.length === 0) return;
+      linea.waypoints.forEach((wp, idx) => {
+        const circle = L.circleMarker(wp, {
+          radius: 6,
+          color: linea.color,
+          weight: 2,
+          fillColor: linea.color,
+          fillOpacity: 0.6,
+          className: 'waypoint-marker',
+        })
+          .addTo(mapRef.current!)
+          .bindTooltip(`WP ${idx + 1}: ${linea.nombre}`, {
+            permanent: false,
+            direction: 'top',
+            className: 'waypoint-tooltip',
+          });
+        waypointsRef.current.push(circle);
+      });
+    });
+  }, [lineas, mapReady, isAdmin]);
 
   // Draw line points (puntos sobre lineas)
   useEffect(() => {
