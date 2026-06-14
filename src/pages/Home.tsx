@@ -8,8 +8,10 @@ import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useUPZRef } from '@/hooks/useUPZRef';
 import type { Pin, PuntoLinea } from '@/types';
-import { Loader2, MapPin, Route } from 'lucide-react';
+import { Loader2, MapPin, Route, FolderOpen, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { GaleriaRecursos } from '@/components/GaleriaRecursos';
+import { AnalisisCampana } from '@/components/AnalisisCampana';
 
 export function Home() {
   const { pines, loading: pinesLoading } = usePines();
@@ -18,6 +20,8 @@ export function Home() {
 
   const [pinSeleccionado, setPinSeleccionado] = useState<Pin | null>(null);
   const [puntoSeleccionado, setPuntoSeleccionado] = useState<PuntoLinea | null>(null);
+  const [recursosOpen, setRecursosOpen] = useState(false);
+  const [analisisOpen, setAnalisisOpen] = useState(false);
   const mapaRef = useRef<MapaSubaHandle>(null);
 
   const loading = pinesLoading || lineasLoading;
@@ -121,6 +125,39 @@ export function Home() {
         puntoLinea={puntoSeleccionado}
         onClose={handleCloseInfo}
       />
+
+      {/* Botones flotantes - Esquina inferior izquierda */}
+      <div className="absolute bottom-6 left-6 z-[1000] flex flex-col gap-2">
+        {/* Boton Analisis de Campana */}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.1 }}
+          onClick={() => setAnalisisOpen(true)}
+          className="flex items-center gap-2 px-4 py-3 bg-slate-950/80 backdrop-blur-md border border-orange-500/30 rounded-xl text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/50 transition-all shadow-lg shadow-orange-500/5"
+        >
+          <Megaphone className="w-5 h-5" />
+          <span className="text-xs font-medium hidden sm:inline">Analisis de Campana en Calle</span>
+        </motion.button>
+
+        {/* Boton Centro de Recursos */}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1 }}
+          onClick={() => setRecursosOpen(true)}
+          className="flex items-center gap-2 px-4 py-3 bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 rounded-xl text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all shadow-lg shadow-cyan-500/5"
+        >
+          <FolderOpen className="w-5 h-5" />
+          <span className="text-xs font-medium hidden sm:inline">Centro de Recursos</span>
+        </motion.button>
+      </div>
+
+      {/* Panel de Recursos */}
+      <GaleriaRecursos open={recursosOpen} onClose={() => setRecursosOpen(false)} />
+
+      {/* Panel de Analisis */}
+      <AnalisisCampana open={analisisOpen} onClose={() => setAnalisisOpen(false)} />
 
       {/* Corner decorations */}
       <div className="absolute top-16 right-4 z-[999] pointer-events-none">
