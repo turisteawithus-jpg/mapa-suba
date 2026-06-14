@@ -11,6 +11,7 @@ import {
   Route,
   Navigation,
 } from 'lucide-react';
+import { GaleriaPin } from '@/components/GaleriaPin';
 import { Button } from '@/components/ui/button';
 import type { Pin, PuntoLinea, NotaPin } from '@/types';
 import { upzData } from '@/data/upz-data';
@@ -104,6 +105,8 @@ function useItemData(item: Pin | PuntoLinea | null) {
         video_url: item.video_url,
         notas: item.notas,
         fecha: item.creado_at,
+        galeria_imagenes: item.galeria_imagenes,
+        galeria_videos: item.galeria_videos,
       };
     } else {
       return {
@@ -121,6 +124,8 @@ function useItemData(item: Pin | PuntoLinea | null) {
         video_url: item.video_url,
         notas: item.notas,
         fecha: item.creado_at,
+        galeria_imagenes: item.galeria_imagenes,
+        galeria_videos: item.galeria_videos,
       };
     }
   }, [item]);
@@ -257,6 +262,20 @@ export function InfoCard({ pin, puntoLinea, onClose }: InfoCardProps) {
                 >
                   <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-500" />
                   <span>{data.direccion}</span>
+                </motion.div>
+              )}
+
+              {/* Galeria de imagenes y videos */}
+              {(data.galeria_imagenes || data.galeria_videos) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.27 }}
+                >
+                  <GaleriaPin
+                    imagenes={data.galeria_imagenes}
+                    videos={data.galeria_videos}
+                  />
                 </motion.div>
               )}
 
