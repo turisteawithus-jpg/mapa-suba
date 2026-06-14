@@ -18,6 +18,8 @@ import {
   CircleDot,
   StickyNote,
   Crosshair,
+  Image,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
@@ -37,7 +39,7 @@ import type { MapaSubaHandle } from '@/components/MapaSuba';
 import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
-import { useUPZRef } from '@/hooks/useUPZRef';
+import { useUPZAdmin } from '@/hooks/useUPZAdmin';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
@@ -59,6 +61,8 @@ interface PinFormData {
   imagen_descarga_url: string;
   video_url: string;
   notas: NotaPin[];
+  galeria_imagenes: string[];
+  galeria_videos: { url: string; titulo: string }[];
 }
 
 const emptyPinForm: PinFormData = {
@@ -73,6 +77,8 @@ const emptyPinForm: PinFormData = {
   imagen_descarga_url: '',
   video_url: '',
   notas: [],
+  galeria_imagenes: [],
+  galeria_videos: [],
 };
 
 // ========== LINEA FORM ==========
@@ -110,6 +116,8 @@ interface PuntoFormData {
   video_url: string;
   orden: string;
   notas: NotaPin[];
+  galeria_imagenes: string[];
+  galeria_videos: { url: string; titulo: string }[];
 }
 
 const emptyPuntoForm: PuntoFormData = {
@@ -125,6 +133,8 @@ const emptyPuntoForm: PuntoFormData = {
   video_url: '',
   orden: '1',
   notas: [],
+  galeria_imagenes: [],
+  galeria_videos: [],
 };
 
 // ========== NOTA FORM ==========
@@ -156,7 +166,7 @@ export function Admin() {
   const { pines, loading: pinesLoading, addPin, editPin, removePin } = usePines();
   const { lineas, puntos, addLinea, editLinea, removeLinea, addPunto, editPunto, removePunto } = useLineas();
   const { notas, addNota, editNota, removeNota } = useNotas();
-  const { centros: centrosUPZ, setCentroUPZ } = useUPZRef();
+  const { centros: centrosUPZ, updateCentro: setCentroUPZ } = useUPZAdmin();
 
   const [tab, setTab] = useState<AdminTab>('pins');
   // UPZ seleccionada para definir punto de referencia
@@ -251,6 +261,8 @@ export function Admin() {
       imagen_descarga_url: pinForm.imagen_descarga_url || '',
       video_url: pinForm.video_url || '',
       notas: pinForm.notas,
+      galeria_imagenes: pinForm.galeria_imagenes,
+      galeria_videos: pinForm.galeria_videos,
     };
     if (editingPinId) {
       editPin(editingPinId, pinData);
@@ -277,6 +289,8 @@ export function Admin() {
       imagen_descarga_url: pin.imagen_descarga_url,
       video_url: pin.video_url,
       notas: [...pin.notas],
+      galeria_imagenes: pin.galeria_imagenes ? [...pin.galeria_imagenes] : [],
+      galeria_videos: pin.galeria_videos ? [...pin.galeria_videos] : [],
     });
     setEditingPinId(pin.id);
     setSubTab('form');
@@ -357,6 +371,8 @@ export function Admin() {
         video_url: puntoForm.video_url,
         orden: parseInt(puntoForm.orden),
         notas: puntoForm.notas,
+        galeria_imagenes: puntoForm.galeria_imagenes,
+        galeria_videos: puntoForm.galeria_videos,
       });
       showMessage('success', 'Punto actualizado correctamente');
       setEditingPuntoId(null);
@@ -374,6 +390,8 @@ export function Admin() {
         video_url: puntoForm.video_url,
         orden: parseInt(puntoForm.orden),
         notas: puntoForm.notas,
+        galeria_imagenes: puntoForm.galeria_imagenes,
+        galeria_videos: puntoForm.galeria_videos,
       });
       showMessage('success', 'Punto creado correctamente');
     }
@@ -762,6 +780,95 @@ export function Admin() {
                           className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50" />
                       </div>
 
+                      {/* Galeria de Imagenes */}
+                      <div className="border-t border-slate-800 pt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-slate-300 text-xs flex items-center gap-1.5">
+                            <Image className="w-3.5 h-3.5 text-cyan-400" />
+                            Galeria de Imagenes ({pinForm.galeria_imagenes.length})
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => setPinForm({ ...pinForm, galeria_imagenes: [...pinForm.galeria_imagenes, ''] })}
+                            className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Agregar
+                          </button>
+                        </div>
+                        {pinForm.galeria_imagenes.map((url, i) => (
+                          <div key={i} className="flex gap-2">
+                            <Input
+                              type="url"
+                              value={url}
+                              onChange={(e) => {
+                                const updated = [...pinForm.galeria_imagenes];
+                                updated[i] = e.target.value;
+                                setPinForm({ ...pinForm, galeria_imagenes: updated });
+                              }}
+                              placeholder="https://ejemplo.com/imagen.jpg"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPinForm({ ...pinForm, galeria_imagenes: pinForm.galeria_imagenes.filter((_, idx) => idx !== i) })}
+                              className="text-red-400 hover:text-red-300 p-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Galeria de Videos */}
+                      <div className="border-t border-slate-800 pt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-slate-300 text-xs flex items-center gap-1.5">
+                            <Video className="w-3.5 h-3.5 text-emerald-400" />
+                            Galeria de Videos ({pinForm.galeria_videos.length})
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => setPinForm({ ...pinForm, galeria_videos: [...pinForm.galeria_videos, { url: '', titulo: '' }] })}
+                            className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Agregar
+                          </button>
+                        </div>
+                        {pinForm.galeria_videos.map((v, i) => (
+                          <div key={i} className="flex gap-2">
+                            <Input
+                              type="url"
+                              value={v.url}
+                              onChange={(e) => {
+                                const updated = [...pinForm.galeria_videos];
+                                updated[i] = { ...updated[i], url: e.target.value };
+                                setPinForm({ ...pinForm, galeria_videos: updated });
+                              }}
+                              placeholder="URL del video"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 text-xs flex-1"
+                            />
+                            <Input
+                              type="text"
+                              value={v.titulo}
+                              onChange={(e) => {
+                                const updated = [...pinForm.galeria_videos];
+                                updated[i] = { ...updated[i], titulo: e.target.value };
+                                setPinForm({ ...pinForm, galeria_videos: updated });
+                              }}
+                              placeholder="Titulo"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 text-xs w-28"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPinForm({ ...pinForm, galeria_videos: pinForm.galeria_videos.filter((_, idx) => idx !== i) })}
+                              className="text-red-400 hover:text-red-300 p-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
                       {/* Notas del Pin */}
                       <div className="border-t border-slate-800 pt-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -1059,6 +1166,95 @@ export function Admin() {
                           className="bg-slate-900 border-slate-700 text-slate-200 font-mono text-sm" />
                       </div>
 
+                      {/* Galeria de Imagenes */}
+                      <div className="border-t border-slate-800 pt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-slate-300 text-xs flex items-center gap-1.5">
+                            <Image className="w-3.5 h-3.5 text-cyan-400" />
+                            Galeria de Imagenes ({puntoForm.galeria_imagenes.length})
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => setPuntoForm({ ...puntoForm, galeria_imagenes: [...puntoForm.galeria_imagenes, ''] })}
+                            className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Agregar
+                          </button>
+                        </div>
+                        {puntoForm.galeria_imagenes.map((url, i) => (
+                          <div key={i} className="flex gap-2">
+                            <Input
+                              type="url"
+                              value={url}
+                              onChange={(e) => {
+                                const updated = [...puntoForm.galeria_imagenes];
+                                updated[i] = e.target.value;
+                                setPuntoForm({ ...puntoForm, galeria_imagenes: updated });
+                              }}
+                              placeholder="https://ejemplo.com/imagen.jpg"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPuntoForm({ ...puntoForm, galeria_imagenes: puntoForm.galeria_imagenes.filter((_, idx) => idx !== i) })}
+                              className="text-red-400 hover:text-red-300 p-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Galeria de Videos */}
+                      <div className="border-t border-slate-800 pt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-slate-300 text-xs flex items-center gap-1.5">
+                            <Video className="w-3.5 h-3.5 text-emerald-400" />
+                            Galeria de Videos ({puntoForm.galeria_videos.length})
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => setPuntoForm({ ...puntoForm, galeria_videos: [...puntoForm.galeria_videos, { url: '', titulo: '' }] })}
+                            className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Agregar
+                          </button>
+                        </div>
+                        {puntoForm.galeria_videos.map((v, i) => (
+                          <div key={i} className="flex gap-2">
+                            <Input
+                              type="url"
+                              value={v.url}
+                              onChange={(e) => {
+                                const updated = [...puntoForm.galeria_videos];
+                                updated[i] = { ...updated[i], url: e.target.value };
+                                setPuntoForm({ ...puntoForm, galeria_videos: updated });
+                              }}
+                              placeholder="URL del video"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 text-xs flex-1"
+                            />
+                            <Input
+                              type="text"
+                              value={v.titulo}
+                              onChange={(e) => {
+                                const updated = [...puntoForm.galeria_videos];
+                                updated[i] = { ...updated[i], titulo: e.target.value };
+                                setPuntoForm({ ...puntoForm, galeria_videos: updated });
+                              }}
+                              placeholder="Titulo"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 text-xs w-28"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPuntoForm({ ...puntoForm, galeria_videos: puntoForm.galeria_videos.filter((_, idx) => idx !== i) })}
+                              className="text-red-400 hover:text-red-300 p-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
                       {/* Notas del Punto */}
                       <div className="border-t border-slate-800 pt-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -1351,7 +1547,7 @@ export function Admin() {
                                 <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{punto.descripcion}</p>
                               </div>
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button variant="ghost" size="sm" onClick={() => { setEditingPuntoId(punto.id); setPuntoForm({ titulo: punto.titulo, descripcion: punto.descripcion, latitud: punto.latitud.toString(), longitud: punto.longitud.toString(), linea_id: punto.linea_id, tamano: punto.tamano, color: punto.color, imagen_url: punto.imagen_url, imagen_descarga_url: punto.imagen_descarga_url, video_url: punto.video_url, orden: punto.orden.toString(), notas: punto.notas }); setSubTab('form'); }}
+                                <Button variant="ghost" size="sm" onClick={() => { setEditingPuntoId(punto.id); setPuntoForm({ titulo: punto.titulo, descripcion: punto.descripcion, latitud: punto.latitud.toString(), longitud: punto.longitud.toString(), linea_id: punto.linea_id, tamano: punto.tamano, color: punto.color, imagen_url: punto.imagen_url, imagen_descarga_url: punto.imagen_descarga_url, video_url: punto.video_url, orden: punto.orden.toString(), notas: punto.notas, galeria_imagenes: punto.galeria_imagenes ? [...punto.galeria_imagenes] : [], galeria_videos: punto.galeria_videos ? [...punto.galeria_videos] : [] }); setSubTab('form'); }}
                                   className="text-slate-400 hover:text-purple-400 hover:bg-purple-500/10"><Edit3 className="w-4 h-4" /></Button>
                                 <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(`punto-${punto.id}`)}
                                   className="text-slate-400 hover:text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
