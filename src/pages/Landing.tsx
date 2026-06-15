@@ -92,14 +92,18 @@ export function Landing({ onEnter }: LandingProps) {
   return (
     <motion.div
       ref={containerRef}
-      className="fixed inset-0 z-[3000] bg-[#0a1628] overflow-y-auto"
+      className="fixed inset-0 z-[3000] bg-[#0a1628] overflow-y-scroll"
+      style={{ scrollSnapType: 'y mandatory' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, y: -50 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
     >
       {/* SECCION 1: Imagen del candidato con efecto parallax */}
-      <div className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
+      <div
+        className="relative h-screen flex flex-col items-center justify-center overflow-hidden"
+        style={{ scrollSnapAlign: 'start', scrollSnapStop: 'always' }}
+      >
         {/* Grid lines background */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
@@ -148,7 +152,10 @@ export function Landing({ onEnter }: LandingProps) {
       </div>
 
       {/* SECCION 2: Descripcion de la herramienta */}
-      <div className="relative min-h-screen bg-[#0a1628]">
+      <div
+        className="relative min-h-screen bg-[#0a1628] overflow-y-auto"
+        style={{ scrollSnapAlign: 'start', scrollSnapStop: 'always' }}
+      >
         {/* Background effects */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
