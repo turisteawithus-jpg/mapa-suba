@@ -38,13 +38,16 @@ export function useSupabaseData() {
       const { data: rows, error: dbError } = await supabase
         .from(MAP_DATA_TABLE)
         .select('*');
+
       if (dbError) throw dbError;
+
       const bundle: MapDataBundle = {
         pines: [],
         lineas: [],
         puntos: [],
         labels: [],
       };
+
       if (rows) {
         for (const row of rows) {
           if (row.tipo === 'pines' && Array.isArray(row.data))
@@ -57,9 +60,10 @@ export function useSupabaseData() {
             bundle.labels = row.data;
         }
       }
+
       setData(bundle);
     } catch {
-      /* fallback */
+      /* fallback silencioso */
     } finally {
       setLoading(false);
     }
@@ -123,6 +127,7 @@ export function useSupabaseData() {
     labels: data.labels,
     loading,
     configured,
+    loadData,
     saveData,
   };
 }
