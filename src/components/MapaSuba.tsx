@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 're
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { upzData } from '@/data/upz-data';
-import type { Pin, Linea, PuntoLinea } from '@/types';
+import type { Pin, Linea, PuntoLinea, TextoLabel } from '@/types';
 
 export interface MapaSubaHandle {
   flyTo: (lat: number, lng: number, zoom?: number) => void;
@@ -22,6 +22,8 @@ interface MapaSubaProps {
   puntosLinea?: PuntoLinea[];
   puntoSeleccionado?: PuntoLinea | null;
   onPuntoSelect?: (punto: PuntoLinea) => void;
+  // Text labels editables en el mapa
+  textLabels?: TextoLabel[];
 
 }
 
@@ -88,6 +90,7 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
     puntosLinea = [],
     puntoSeleccionado,
     onPuntoSelect,
+    textLabels = [],
 
   },
   ref
@@ -98,6 +101,7 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
   const adminMarkerRef = useRef<L.Marker | null>(null);
   const lineasRef = useRef<(L.Polyline | L.Polygon)[]>([]);
   const puntosRef = useRef<L.Marker[]>([]);
+  const labelsRef = useRef<L.Marker[]>([]);
 
   const [mapReady, setMapReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
@@ -239,22 +243,31 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
           onLineaSelect?.(linea);
         });
 
-        // Si tiene filtro tecnologico, agregar patron SVG
+        // Inyectar patron SVG tecnologico si tiene filtro
         if (linea.filtrar) {
-          const svgPattern = `
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="tech-${linea.id}" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="12" stroke="${linea.color}" stroke-width="1.5" opacity="0.25"/>
-                  <line x1="6" y1="0" x2="6" y2="12" stroke="${linea.color}" stroke-width="0.5" opacity="0.15"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#tech-${linea.id})"/>
-            </svg>
-          `;
-          const blob = new Blob([svgPattern], { type: 'image/svg+xml' });
-          const url = URL.createObjectURL(blob);
-          polygon.setStyle({ fillPattern: url } as any);
+          polygon.on('add', () => {
+            const svg = polygon.getElement()?.closest('svg');
+            if (svg && !svg.querySelector(`#tech-pattern-${linea.id}`)) {
+              const defs = svg.querySelector('defs') || svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg', 'defs'), svg.firstChild);
+              const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+              pattern.setAttribute('id', `tech-pattern-${linea.id}`);
+              pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+              pattern.setAttribute('width', '10');
+              pattern.setAttribute('height', '10');
+              pattern.setAttribute('patternTransform', 'rotate(45)');
+              pattern.innerHTML = `
+                <line x1="0" y1="0" x2="0" y2="10" stroke="${linea.color}" stroke-width="1" opacity="0.3"/>
+                <line x1="5" y1="0" x2="5" y2="10" stroke="${linea.color}" stroke-width="0.5" opacity="0.15"/>
+              `;
+              defs.appendChild(pattern);
+              // Aplicar el pattern como fill
+              const path = polygon.getElement() as SVGPathElement | null;
+              if (path) {
+                path.style.fill = `url(#tech-pattern-${linea.id})`;
+                path.style.fillOpacity = '0.35';
+              }
+            }
+          });
         }
 
         lineasRef.current.push(polygon);
@@ -341,6 +354,41 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
       puntosRef.current.push(marker);
     });
   }, [puntosLinea, mapReady, onPuntoSelect]);
+
+  // Draw text labels
+  useEffect(() => {
+    if (!mapRef.current || !mapReady) return;
+    labelsRef.current.forEach((m) => m.remove());
+    labelsRef.current = [];
+
+    textLabels.forEach((label) => {
+      const icon = L.divIcon({
+        className: 'text-label-marker',
+        html: `<div style="
+          font-size:${label.fontSize}px;
+          color:${label.color};
+          font-weight:700;
+          text-shadow:0 0 8px ${label.color}80,0 0 16px ${label.color}40,0 0 2px #000;
+          white-space:nowrap;
+          transform:rotate(${label.rotacion}deg);
+          transform-origin:center center;
+          pointer-events:none;
+          letter-spacing:0.5px;
+          font-family:system-ui,-apple-system,sans-serif;
+        ">${label.texto}</div>`,
+        iconSize: [1, 1],
+        iconAnchor: [0.5, 0.5],
+      });
+
+      const marker = L.marker([label.latitud, label.longitud], {
+        icon,
+        zIndexOffset: 100,
+        interactive: false,
+      }).addTo(mapRef.current!);
+
+      labelsRef.current.push(marker);
+    });
+  }, [textLabels, mapReady]);
 
   // Draw pin markers
   useEffect(() => {
