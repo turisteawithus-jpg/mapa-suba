@@ -18,6 +18,7 @@ import {
   CircleDot,
   StickyNote,
   Crosshair,
+  FolderOpen,
   Image,
   Video,
 } from 'lucide-react';
@@ -40,13 +41,14 @@ import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
 import { useUPZRef } from '@/hooks/useUPZRef';
+import { useRecursos } from '@/hooks/useRecursos';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
 
 
 
-type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz';
+type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz' | 'recursos';
 
 // ========== PIN FORM ==========
 interface PinFormData {
@@ -160,6 +162,200 @@ const COLORS = [
   '#00f3ff', '#ff6b35', '#a855f7', '#22c55e', '#ef4444',
   '#f59e0b', '#ec4899', '#3b82f6', '#14b8a6', '#f97316',
 ];
+
+// ===== ADMIN RECURSOS COMPONENT =====
+function AdminRecursos() {
+  const {
+    piezasGraficasApoyo,
+    estrategiaMarketing,
+    piezasEditables,
+    videos,
+    updatePiezas,
+    updateEstrategia,
+    updateEditables,
+    updateVideos,
+  } = useRecursos();
+
+  const [activeSection, setActiveSection] = useState<'imagenes' | 'pdfs' | 'editables' | 'videos'>('imagenes');
+
+  return (
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <h2 className="text-lg font-bold text-cyan-400 flex items-center gap-2">
+        <FolderOpen className="w-5 h-5" />
+        Centro de Recursos
+      </h2>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
+        {[
+          { key: 'imagenes' as const, label: 'Piezas Graficas', color: 'cyan' },
+          { key: 'pdfs' as const, label: 'Marketing', color: 'orange' },
+          { key: 'editables' as const, label: 'Editables', color: 'purple' },
+          { key: 'videos' as const, label: 'Videos', color: 'emerald' },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveSection(tab.key)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+              activeSection === tab.key
+                ? `border-${tab.color}-500/30 bg-${tab.color}-500/10 text-${tab.color}-400`
+                : 'border-slate-700 text-slate-400 hover:border-slate-600'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Piezas Graficas de Apoyo */}
+      {activeSection === 'imagenes' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-200">Piezas Graficas de Apoyo</h3>
+            <button
+              onClick={() => updatePiezas([...piezasGraficasApoyo, { id: `pga-${Date.now()}`, titulo: '', url: '', thumbnail: '', categoria: '' }])}
+              className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Agregar
+            </button>
+          </div>
+          {piezasGraficasApoyo.map((item, i) => (
+            <div key={item.id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-2">
+              <div className="flex gap-2">
+                <Input value={item.titulo} onChange={(e) => {
+                  const updated = [...piezasGraficasApoyo];
+                  updated[i] = { ...updated[i], titulo: e.target.value };
+                  updatePiezas(updated);
+                }} placeholder="Titulo" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+                <button onClick={() => updatePiezas(piezasGraficasApoyo.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <Input value={item.url} onChange={(e) => {
+                const updated = [...piezasGraficasApoyo];
+                updated[i] = { ...updated[i], url: e.target.value, thumbnail: e.target.value };
+                updatePiezas(updated);
+              }} placeholder="URL de la imagen" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+              {item.url && <img src={item.url} alt={item.titulo} className="w-20 h-20 object-cover rounded-lg border border-slate-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Estrategia de Marketing */}
+      {activeSection === 'pdfs' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-200">Estrategia de Marketing</h3>
+            <button
+              onClick={() => updateEstrategia([...estrategiaMarketing, { id: `em-${Date.now()}`, titulo: '', descripcion: '', url: '', portada: '' }])}
+              className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Agregar
+            </button>
+          </div>
+          {estrategiaMarketing.map((item, i) => (
+            <div key={item.id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-2">
+              <div className="flex gap-2">
+                <Input value={item.titulo} onChange={(e) => {
+                  const updated = [...estrategiaMarketing];
+                  updated[i] = { ...updated[i], titulo: e.target.value };
+                  updateEstrategia(updated);
+                }} placeholder="Titulo del PDF" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+                <button onClick={() => updateEstrategia(estrategiaMarketing.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <Input value={item.descripcion} onChange={(e) => {
+                const updated = [...estrategiaMarketing];
+                updated[i] = { ...updated[i], descripcion: e.target.value };
+                updateEstrategia(updated);
+              }} placeholder="Descripcion" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+              <Input value={item.url} onChange={(e) => {
+                const updated = [...estrategiaMarketing];
+                updated[i] = { ...updated[i], url: e.target.value };
+                updateEstrategia(updated);
+              }} placeholder="URL del PDF" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Piezas Editables */}
+      {activeSection === 'editables' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-200">Piezas Graficas Editables y Analisis Estrategico Actual</h3>
+            <button
+              onClick={() => updateEditables([...piezasEditables, { id: `pe-${Date.now()}`, titulo: '', url: '', thumbnail: '', categoria: '' }])}
+              className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Agregar
+            </button>
+          </div>
+          {piezasEditables.map((item, i) => (
+            <div key={item.id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-2">
+              <div className="flex gap-2">
+                <Input value={item.titulo} onChange={(e) => {
+                  const updated = [...piezasEditables];
+                  updated[i] = { ...updated[i], titulo: e.target.value };
+                  updateEditables(updated);
+                }} placeholder="Titulo" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+                <button onClick={() => updateEditables(piezasEditables.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <Input value={item.url} onChange={(e) => {
+                const updated = [...piezasEditables];
+                updated[i] = { ...updated[i], url: e.target.value, thumbnail: e.target.value };
+                updateEditables(updated);
+              }} placeholder="URL de la imagen" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Videos */}
+      {activeSection === 'videos' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-200">Videos</h3>
+            <button
+              onClick={() => updateVideos([...videos, { id: `vid-${Date.now()}`, titulo: '', descripcion: '', url: '', thumbnail: '' }])}
+              className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Agregar
+            </button>
+          </div>
+          {videos.map((item, i) => (
+            <div key={item.id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-2">
+              <div className="flex gap-2">
+                <Input value={item.titulo} onChange={(e) => {
+                  const updated = [...videos];
+                  updated[i] = { ...updated[i], titulo: e.target.value };
+                  updateVideos(updated);
+                }} placeholder="Titulo del video" className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                <button onClick={() => updateVideos(videos.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <Input value={item.url} onChange={(e) => {
+                const updated = [...videos];
+                updated[i] = { ...updated[i], url: e.target.value };
+                updateVideos(updated);
+              }} placeholder="URL del video (YouTube, Vimeo, etc.)" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+              <Input value={item.descripcion} onChange={(e) => {
+                const updated = [...videos];
+                updated[i] = { ...updated[i], descripcion: e.target.value };
+                updateVideos(updated);
+              }} placeholder="Descripcion" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Admin() {
   const { isSignedIn, isLoaded, openSignIn } = useAuth();
@@ -497,6 +693,7 @@ export function Admin() {
     { key: 'puntos', label: 'Puntos', icon: <CircleDot className="w-4 h-4" />, count: puntos.length },
     { key: 'notas', label: 'Notas', icon: <StickyNote className="w-4 h-4" />, count: notas.length },
     { key: 'refupz', label: 'Ref. UPZ', icon: <Crosshair className="w-4 h-4" /> },
+    { key: 'recursos', label: 'Recursos', icon: <FolderOpen className="w-4 h-4" /> },
   ];
 
   const getUPZBarrios = (upzNombre: string) => {
@@ -691,6 +888,9 @@ export function Admin() {
                 </div>
               </div>
             </div>
+          ) : tab === 'recursos' ? (
+            /* ===== RECURSOS EDITOR ===== */
+            <AdminRecursos />
           ) : subTab === 'form' ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-0">
               {/* Map */}
