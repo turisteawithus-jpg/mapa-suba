@@ -482,9 +482,72 @@ export function Admin() {
     showMessage('success', `Coordenadas capturadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
   }, [tab, upzRefSeleccionada, setCentroUPZ, showMessage]);
 
-  // ===== GUARDAR PARA PRODUCCION (SUPABASE) =====
+    // ===== GUARDAR PARA PRODUCCION (SUPABASE) =====
   const handleGuardarProduccion = async () => {
-    const { supabase, MAP_DATA_TABLE } = await import('@/lib/supabase');
+    try {
+      const { supabase, MAP_DATA_TABLE } = await import('@/lib/supabase');
+      
+      // Verificar que supabase esté configurado
+      if (!supabase) {
+        showMessage('error', 'Supabase no inicializado. Verifica las credenciales.');
+        return;
+      }
+
+      // Leer datos del localStorage
+      let pinesData: unknown[] = [];
+      let lineasData: unknown[] = [];
+      let puntosData: unknown[] = [];
+      let labelsData: unknown[] = [];
+
+      try {
+        const saved = localStorage.getItem('suba_pines');
+        if (saved) pinesData = JSON.parse(saved);
+      } catch { /* */ }
+      try {
+        const savedL = localStorage.getItem('suba_lineas');
+        if (savedL) lineasData = JSON.parse(savedL);
+      } catch { /* */ }
+      try {
+        const savedP = localStorage.getItem('suba_puntos_linea');
+        if (savedP) puntosData = JSON.parse(savedP);
+      } catch { /* */ }
+      try {
+        const saved = localStorage.getItem('suba_texto_labels');
+        if (saved) labelsData = JSON.parse(saved);
+      } catch { /* */ }
+
+      const totalItems = pinesData.length + lineasData.length + puntosData.length + labelsData.length;
+      
+      if (totalItems === 0) {
+        showMessage('error', 'No hay datos guardados. Crea pines, lineas o textos primero.');
+        return;
+      }
+
+      showMessage('success', 'Enviando ' + totalItems + ' items a la nube...');
+
+      const timestamp = new Date().toISOString();
+      const rows = [
+        { id: 'pines', tipo: 'pines', data: pinesData, updated_at: timestamp },
+        { id: 'lineas', tipo: 'lineas', data: lineasData, updated_at: timestamp },
+        { id: 'puntos', tipo: 'puntos', data: puntosData, updated_at: timestamp },
+        { id: 'labels', tipo: 'labels', data: labelsData, updated_at: timestamp },
+      ];
+
+      const { error } = await supabase.from(MAP_DATA_TABLE).upsert(rows, { onConflict: 'id' });
+
+      if (error) {
+        showMessage('error', 'Error de Supabase: ' + error.message);
+        console.error('Supabase error:', error);
+        return;
+      }
+
+      setCambiosPendientes(0);
+      showMessage('success', 'Datos guardados en la nube correctamente!');
+    } catch (err) {
+      showMessage('error', 'Error inesperado: ' + (err instanceof Error ? err.message : 'Desconocido'));
+      console.error('Error en handleGuardarProduccion:', err);
+    }
+  };
 
     // Leer datos del localStorage
     let pinesData: unknown[] = [];
