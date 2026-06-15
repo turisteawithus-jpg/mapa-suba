@@ -7,6 +7,7 @@ import { LeyendaUPZ } from '@/components/LeyendaUPZ';
 import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useUPZRef } from '@/hooks/useUPZRef';
+import { useTextLabels } from '@/hooks/useTextLabels';
 import type { Pin, PuntoLinea } from '@/types';
 import { Loader2, MapPin, Route, FolderOpen, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -17,6 +18,7 @@ export function Home() {
   const { pines, loading: pinesLoading } = usePines();
   const { lineas, puntos: puntosLinea, loading: lineasLoading } = useLineas();
   const { centros: centrosUPZ } = useUPZRef();
+  const { labels: textLabels } = useTextLabels();
 
   const [pinSeleccionado, setPinSeleccionado] = useState<Pin | null>(null);
   const [puntoSeleccionado, setPuntoSeleccionado] = useState<PuntoLinea | null>(null);
@@ -112,6 +114,7 @@ export function Home() {
             puntosLinea={puntosLinea}
             puntoSeleccionado={puntoSeleccionado}
             onPuntoSelect={handlePuntoSelect}
+            textLabels={textLabels}
           />
         )}
       </div>
@@ -137,7 +140,7 @@ export function Home() {
           className="flex items-center gap-2 px-4 py-3 bg-slate-950/80 backdrop-blur-md border border-orange-500/30 rounded-xl text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/50 transition-all shadow-lg shadow-orange-500/5"
         >
           <Megaphone className="w-5 h-5" />
-          <span className="text-xs font-medium hidden sm:inline">Analisis de Campana en Calle</span>
+          <span className="text-xs font-medium hidden sm:inline">Analisis de Campana</span>
         </motion.button>
 
         {/* Boton Centro de Recursos */}
