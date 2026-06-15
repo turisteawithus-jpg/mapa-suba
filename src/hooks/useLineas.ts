@@ -35,14 +35,21 @@ export function useLineas() {
 
   // Al montar, forzar recarga desde localStorage (navegacion admin -> mapa)
   useEffect(() => {
-    const savedLineas = localStorage.getItem(STORAGE_KEY_LINEAS);
-    if (savedLineas !== null) {
-      try { const p = JSON.parse(savedLineas); if (Array.isArray(p)) setLineas(p); } catch { /* */ }
-    }
-    const savedPuntos = localStorage.getItem(STORAGE_KEY_PUNTOS);
-    if (savedPuntos !== null) {
-      try { const p = JSON.parse(savedPuntos); if (Array.isArray(p)) setPuntos(p); } catch { /* */ }
-    }
+    const reload = () => {
+      const savedLineas = localStorage.getItem(STORAGE_KEY_LINEAS);
+      if (savedLineas !== null) {
+        try { const p = JSON.parse(savedLineas); if (Array.isArray(p)) setLineas(p); } catch { /* */ }
+      }
+      const savedPuntos = localStorage.getItem(STORAGE_KEY_PUNTOS);
+      if (savedPuntos !== null) {
+        try { const p = JSON.parse(savedPuntos); if (Array.isArray(p)) setPuntos(p); } catch { /* */ }
+      }
+    };
+    reload();
+    // Recargar tambien cuando el usuario vuelve a la pestana
+    const handleVisibility = () => { if (!document.hidden) reload(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   // Guardar y notificar
