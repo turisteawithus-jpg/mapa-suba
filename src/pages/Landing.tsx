@@ -69,39 +69,58 @@ export function Landing({ onEnter }: LandingProps) {
     return () => { if (el) el.removeEventListener('mousemove', handleMouseMove); };
   }, [currentSlide]);
 
-  // Scroll wheel → cambiar diapositiva
+  // Ref para acceder al slide actual sin re-registrar listeners
+  const slideRef = useRef(currentSlide);
+  slideRef.current = currentSlide;
+
+  // Scroll wheel → cambiar diapositiva (captura en document para mayor robustez)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      // Solo interceptar si no estamos en un elemento scrollable interno
+      const target = e.target as HTMLElement;
+      const scrollableParent = target.closest('[data-scrollable]');
+      if (scrollableParent) return;
+
       e.preventDefault();
       if (isScrolling.current) return;
-      isScrolling.current = true;
-      if (e.deltaY > 30 && currentSlide < SLIDES.length - 1) {
-        setCurrentSlide((p) => p + 1);
-      } else if (e.deltaY < -30 && currentSlide > 0) {
-        setCurrentSlide((p) => p - 1);
-      }
-      setTimeout(() => { isScrolling.current = false; }, 600);
-    };
-    const el = containerRef.current;
-    if (el) el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => { if (el) el.removeEventListener('wheel', handleWheel); };
-  }, [currentSlide]);
 
-  // Touch swipe
+      const current = slideRef.current;
+      if (e.deltaY > 30 && current < SLIDES.length - 1) {
+        isScrolling.current = true;
+        setCurrentSlide(current + 1);
+        setTimeout(() => { isScrolling.current = false; }, 700);
+      } else if (e.deltaY < -30 && current > 0) {
+        isScrolling.current = true;
+        setCurrentSlide(current - 1);
+        setTimeout(() => { isScrolling.current = false; }, 700);
+      }
+    };
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  // Touch swipe (captura en document)
   useEffect(() => {
     let startY = 0;
     const handleTouchStart = (e: TouchEvent) => { startY = e.touches[0].clientY; };
     const handleTouchEnd = (e: TouchEvent) => {
       const deltaY = startY - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) > 50) {
-        if (deltaY > 0 && currentSlide < SLIDES.length - 1) setCurrentSlide((p) => p + 1);
-        else if (deltaY < 0 && currentSlide > 0) setCurrentSlide((p) => p - 1);
+        const current = slideRef.current;
+        if (deltaY > 0 && current < SLIDES.length - 1) {
+          setCurrentSlide(current + 1);
+        } else if (deltaY < 0 && current > 0) {
+          setCurrentSlide(current - 1);
+        }
       }
     };
-    const el = containerRef.current;
-    if (el) { el.addEventListener('touchstart', handleTouchStart); el.addEventListener('touchend', handleTouchEnd); }
-    return () => { if (el) { el.removeEventListener('touchstart', handleTouchStart); el.removeEventListener('touchend', handleTouchEnd); } }
-  }, [currentSlide]);
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
 
   const scale = 1 + Math.abs(mousePos.x) * 0.15 + Math.abs(mousePos.y) * 0.15;
   const tx = mousePos.x * -30;
