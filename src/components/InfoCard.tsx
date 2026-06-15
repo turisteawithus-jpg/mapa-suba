@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Download,
   MapPin,
   Building2,
   LocateFixed,
@@ -12,7 +11,7 @@ import {
   Navigation,
 } from 'lucide-react';
 import { GaleriaPin } from '@/components/GaleriaPin';
-import { Button } from '@/components/ui/button';
+
 import type { Pin, PuntoLinea, NotaPin } from '@/types';
 import { upzData } from '@/data/upz-data';
 import { NotaPanel, NotaDetalle } from '@/components/NotaPanel';
@@ -329,22 +328,7 @@ export function InfoCard({ pin, puntoLinea, onClose }: InfoCardProps) {
                     }}
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50"
-                  asChild
-                >
-                  <a
-                    href={data.imagen_descarga_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Descargar Imagen
-                  </a>
-                </Button>
+                {/* Las imagenes se descargan desde la Galeria arriba */}
               </motion.div>
 
               {/* Video */}
