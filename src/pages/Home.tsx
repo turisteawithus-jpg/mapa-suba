@@ -8,6 +8,7 @@ import { usePines } from '@/hooks/usePines';
 import { useLineas } from '@/hooks/useLineas';
 import { useUPZRef } from '@/hooks/useUPZRef';
 import { useTextLabels } from '@/hooks/useTextLabels';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import type { Pin, PuntoLinea } from '@/types';
 import { Loader2, MapPin, Route, FolderOpen, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -15,18 +16,28 @@ import { GaleriaRecursos } from '@/components/GaleriaRecursos';
 import { AnalisisCampana } from '@/components/AnalisisCampana';
 
 export function Home() {
-  const { pines, loading: pinesLoading } = usePines();
-  const { lineas, puntos: puntosLinea, loading: lineasLoading } = useLineas();
+  // Supabase (nube) - fuente principal si esta configurado
+  const { pines: sbPines, lineas: sbLineas, puntos: sbPuntos, labels: sbLabels, loading: sbLoading, configured: sbConfigured } = useSupabaseData();
+
+  // LocalStorage (local) - fallback si Supabase no esta configurado
+  const { pines: localPines, loading: localPinesLoading } = usePines();
+  const { lineas: localLineas, puntos: localPuntos, loading: localLineasLoading } = useLineas();
+  const { labels: localLabels } = useTextLabels();
+
   const { centros: centrosUPZ } = useUPZRef();
-  const { labels: textLabels } = useTextLabels();
+
+  // Usar Supabase si esta configurado, sino localStorage
+  const pines = sbConfigured ? sbPines : localPines;
+  const lineas = sbConfigured ? sbLineas : localLineas;
+  const puntosLinea = sbConfigured ? sbPuntos : localPuntos;
+  const textLabels = sbConfigured ? sbLabels : localLabels;
+  const loading = sbConfigured ? sbLoading : (localPinesLoading || localLineasLoading);
 
   const [pinSeleccionado, setPinSeleccionado] = useState<Pin | null>(null);
   const [puntoSeleccionado, setPuntoSeleccionado] = useState<PuntoLinea | null>(null);
   const [recursosOpen, setRecursosOpen] = useState(false);
   const [analisisOpen, setAnalisisOpen] = useState(false);
   const mapaRef = useRef<MapaSubaHandle>(null);
-
-  const loading = pinesLoading || lineasLoading;
 
   const handlePinSelect = useCallback((pin: Pin) => {
     setPinSeleccionado(pin);
