@@ -75,6 +75,13 @@ export const piezasGraficasApoyo: RecursoImagen[] = [
 // ===== ESTRATEGIA DE MARKETING (PDFs) =====
 export const estrategiaMarketing: RecursoPDF[] = [
   {
+    id: 'em-0',
+    titulo: 'Analisis Estrategico SUBA 2026',
+    descripcion: 'Analisis completo de las Zonas Naranjas en Suba: perfiles de votante, 5 ejes del mensaje, propuestas que resuenan, lo que NO se debe decir, y estrategia por canales. Documento base para acciones de campana.',
+    url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80',
+  },
+  {
     id: 'em-1',
     titulo: 'Estrategia de Marketing 2025',
     descripcion: 'Documento completo con la estrategia de marketing digital para la localidad de Suba. Incluye analisis de mercado, segmentacion y tacticas de comunicacion.',
