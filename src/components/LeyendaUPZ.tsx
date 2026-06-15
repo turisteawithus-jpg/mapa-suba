@@ -9,7 +9,7 @@ interface LeyendaUPZProps {
 }
 
 export function LeyendaUPZ({ onFlyTo, centrosUPZ }: LeyendaUPZProps) {
-  const [colapsado, setColapsado] = useState(false);
+  const [colapsado, setColapsado] = useState(true);
 
   return (
     <div className="absolute bottom-4 left-4 z-[1000] bg-slate-950/80 backdrop-blur-md border border-cyan-500/20 rounded-xl overflow-hidden shadow-lg max-w-[230px]">
