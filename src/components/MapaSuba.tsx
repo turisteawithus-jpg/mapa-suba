@@ -26,9 +26,11 @@ interface MapaSubaProps {
 }
 
 // Create neon pin icon using inline SVG string
-function createNeonIcon(color: string): L.DivIcon {
+function createNeonIcon(color: string, tamano: number = 28): L.DivIcon {
+  const h = Math.round(tamano * 1.286);
+  const scale = tamano / 28;
   const svgHtml = `
-    <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}80);">
+    <svg width="${tamano}" height="${h}" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}80); transform: scale(${scale}); transform-origin: top left;">
       <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.268 21.732 0 14 0z" fill="${color}"/>
       <circle cx="14" cy="14" r="5" fill="white"/>
     </svg>
@@ -36,9 +38,9 @@ function createNeonIcon(color: string): L.DivIcon {
   return L.divIcon({
     className: 'custom-neon-pin',
     html: svgHtml,
-    iconSize: [28, 36],
-    iconAnchor: [14, 36],
-    popupAnchor: [0, -36],
+    iconSize: [tamano, h],
+    iconAnchor: [tamano / 2, h],
+    popupAnchor: [0, -h],
   });
 }
 
@@ -355,7 +357,7 @@ export const MapaSuba = forwardRef<MapaSubaHandle, MapaSubaProps>(function MapaS
       const color = upz?.colorNeon || '#00f3ff';
 
       const marker = L.marker([pin.latitud, pin.longitud], {
-        icon: createNeonIcon(color),
+        icon: createNeonIcon(color, pin.tamano || 28),
         zIndexOffset: 800,
       })
         .addTo(mapRef.current!)
