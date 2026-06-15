@@ -20,10 +20,16 @@ export function useTextLabels() {
 
   // Al montar, forzar recarga desde localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved !== null) {
-      try { const p = JSON.parse(saved); if (Array.isArray(p)) setLabels(p); } catch { /* */ }
-    }
+    const reload = () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null) {
+        try { const p = JSON.parse(saved); if (Array.isArray(p)) setLabels(p); } catch { /* */ }
+      }
+    };
+    reload();
+    const handleVisibility = () => { if (!document.hidden) reload(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   // Guardar y notificar
