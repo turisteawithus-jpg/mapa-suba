@@ -21,6 +21,8 @@ import {
   FolderOpen,
   Image,
   Video,
+  MessageCircle,
+  Type,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
@@ -42,13 +44,15 @@ import { useLineas } from '@/hooks/useLineas';
 import { useNotas } from '@/hooks/useNotas';
 import { useUPZRef } from '@/hooks/useUPZRef';
 import { useRecursos } from '@/hooks/useRecursos';
+import { useAnalisisCampana } from '@/hooks/useAnalisisCampana';
+import { useTextLabels } from '@/hooks/useTextLabels';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
 
 
 
-type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz' | 'recursos';
+type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz' | 'recursos' | 'analisis' | 'labels';
 
 // ========== PIN FORM ==========
 interface PinFormData {
@@ -141,6 +145,25 @@ const emptyPuntoForm: PuntoFormData = {
   galeria_videos: [],
 };
 
+// ========== LABEL FORM ==========
+interface LabelFormData {
+  texto: string;
+  latitud: string;
+  longitud: string;
+  fontSize: number;
+  color: string;
+  rotacion: number;
+}
+
+const emptyLabelForm: LabelFormData = {
+  texto: '',
+  latitud: '',
+  longitud: '',
+  fontSize: 14,
+  color: '#00f3ff',
+  rotacion: 0,
+};
+
 // ========== NOTA FORM ==========
 interface NotaFormData {
   nombre: string;
@@ -164,6 +187,316 @@ const COLORS = [
   '#00f3ff', '#ff6b35', '#a855f7', '#22c55e', '#ef4444',
   '#f59e0b', '#ec4899', '#3b82f6', '#14b8a6', '#f97316',
 ];
+
+// ===== ADMIN ANALISIS COMPONENT =====
+function AdminAnalisis() {
+  const { data, updateData, updateEje, addEje, removeEje, resetDefaults } = useAnalisisCampana();
+  const [section, setSection] = useState<'general' | 'ejes' | 'perfil' | 'comunicacion' | 'lenguaje'>('general');
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const showMsg = (text: string) => {
+    setMsg(text);
+    setTimeout(() => setMsg(null), 2000);
+  };
+
+  return (
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      {msg && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          className="px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+          {msg}
+        </motion.div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-cyan-400 flex items-center gap-2">
+          <MessageCircle className="w-5 h-5" />
+          Analisis de Campana
+        </h2>
+        <button onClick={() => { resetDefaults(); showMsg('Valores restaurados'); }}
+          className="text-xs text-slate-500 hover:text-red-400 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> Restaurar defaults
+        </button>
+      </div>
+
+      {/* Section tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { key: 'general' as const, label: 'General', color: 'cyan' },
+          { key: 'ejes' as const, label: 'Ejes de Mensaje', color: 'purple' },
+          { key: 'perfil' as const, label: 'Perfil Votante', color: 'orange' },
+          { key: 'comunicacion' as const, label: 'Comunicacion', color: 'emerald' },
+          { key: 'lenguaje' as const, label: 'Lenguaje', color: 'pink' },
+        ].map((tab) => (
+          <button key={tab.key} onClick={() => setSection(tab.key)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+              section === tab.key
+                ? `border-${tab.color}-500/30 bg-${tab.color}-500/10 text-${tab.color}-400`
+                : 'border-slate-700 text-slate-400 hover:border-slate-600'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* GENERAL */}
+      {section === 'general' && (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-slate-300 text-xs">Titulo</Label>
+            <Input value={data.titulo} onChange={(e) => updateData({ titulo: e.target.value })}
+              className="bg-slate-900 border-slate-700 text-slate-200 text-sm" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-slate-300 text-xs">Introduccion</Label>
+            <Textarea value={data.introduccion} onChange={(e) => updateData({ introduccion: e.target.value })}
+              rows={3} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-slate-300 text-xs">Contexto</Label>
+            <Textarea value={data.contexto} onChange={(e) => updateData({ contexto: e.target.value })}
+              rows={3} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none" />
+          </div>
+        </div>
+      )}
+
+      {/* EJES */}
+      {section === 'ejes' && (
+        <div className="space-y-4">
+          <button onClick={() => { addEje(); showMsg('Eje agregado'); }}
+            className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Agregar eje
+          </button>
+          {data.ejes.map((eje, i) => (
+            <div key={eje.id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-500 font-mono">#{i + 1}</span>
+                <Input value={eje.titulo} onChange={(e) => updateEje(i, { ...eje, titulo: e.target.value })}
+                  placeholder="Titulo" className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                <button onClick={() => { removeEje(i); showMsg('Eje eliminado'); }}
+                  className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+              <Input value={eje.subtitulo} onChange={(e) => updateEje(i, { ...eje, subtitulo: e.target.value })}
+                placeholder="Subtitulo" className="bg-slate-900 border-slate-700 text-slate-200 text-xs" />
+              <Textarea value={eje.mensaje} onChange={(e) => updateEje(i, { ...eje, mensaje: e.target.value })}
+                placeholder="Mensaje" rows={2} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none" />
+              <div className="space-y-1">
+                {eje.propuestas.map((p, j) => (
+                  <div key={j} className="flex gap-2">
+                    <Input value={p} onChange={(e) => {
+                      const updated = [...eje.propuestas];
+                      updated[j] = e.target.value;
+                      updateEje(i, { ...eje, propuestas: updated });
+                    }} placeholder={`Propuesta ${j + 1}`} className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                    <button onClick={() => updateEje(i, { ...eje, propuestas: eje.propuestas.filter((_, idx) => idx !== j) })}
+                      className="text-red-400 hover:text-red-300 p-1"><X className="w-3 h-3" /></button>
+                  </div>
+                ))}
+                <button onClick={() => updateEje(i, { ...eje, propuestas: [...eje.propuestas, ''] })}
+                  className="text-[10px] text-slate-500 hover:text-purple-400 flex items-center gap-1">
+                  <Plus className="w-3 h-3" /> Agregar propuesta
+                </button>
+              </div>
+              <div className="flex gap-2">
+                {['cyan', 'emerald', 'orange', 'purple', 'pink'].map((c) => (
+                  <button key={c} onClick={() => updateEje(i, { ...eje, color: c })}
+                    className={`w-6 h-6 rounded-full border-2 ${eje.color === c ? 'border-white' : 'border-transparent'}`}
+                    style={{ background: c === 'cyan' ? '#22d3ee' : c === 'emerald' ? '#34d399' : c === 'orange' ? '#fb923c' : c === 'purple' ? '#c084fc' : '#f472b6' }} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* PERFIL */}
+      {section === 'perfil' && (
+        <div className="space-y-6">
+          {/* Quienes son */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-orange-400">Quienes son</h3>
+            {data.perfilQuienesSon.map((item, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={item} onChange={(e) => {
+                  const updated = [...data.perfilQuienesSon];
+                  updated[i] = e.target.value;
+                  updateData({ perfilQuienesSon: updated });
+                }} className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                <button onClick={() => updateData({ perfilQuienesSon: data.perfilQuienesSon.filter((_, idx) => idx !== i) })}
+                  className="text-red-400 hover:text-red-300 p-1"><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            <button onClick={() => updateData({ perfilQuienesSon: [...data.perfilQuienesSon, ''] })}
+              className="text-[10px] text-slate-500 hover:text-orange-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar
+            </button>
+          </div>
+
+          {/* Dolores */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-orange-400">Dolores</h3>
+            {data.perfilDolores.map((dolor, i) => (
+              <div key={i} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-1.5">
+                <div className="flex gap-2">
+                  <Input value={dolor.label} onChange={(e) => {
+                    const updated = [...data.perfilDolores];
+                    updated[i] = { ...updated[i], label: e.target.value };
+                    updateData({ perfilDolores: updated });
+                  }} placeholder="Label" className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                  <button onClick={() => updateData({ perfilDolores: data.perfilDolores.filter((_, idx) => idx !== i) })}
+                    className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+                <Textarea value={dolor.descripcion} onChange={(e) => {
+                  const updated = [...data.perfilDolores];
+                  updated[i] = { ...updated[i], descripcion: e.target.value };
+                  updateData({ perfilDolores: updated });
+                }} placeholder="Descripcion" rows={2} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none" />
+              </div>
+            ))}
+            <button onClick={() => updateData({ perfilDolores: [...data.perfilDolores, { label: '', descripcion: '' }] })}
+              className="text-[10px] text-slate-500 hover:text-orange-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar dolor
+            </button>
+          </div>
+
+          {/* Sentimientos */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-orange-400">Sentimientos</h3>
+            {data.perfilSentimientos.map((s, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={s.label} onChange={(e) => {
+                  const updated = [...data.perfilSentimientos];
+                  updated[i] = { ...updated[i], label: e.target.value };
+                  updateData({ perfilSentimientos: updated });
+                }} placeholder="Label" className="bg-slate-900 border-slate-700 text-slate-200 text-xs w-32" />
+                <Input value={s.descripcion} onChange={(e) => {
+                  const updated = [...data.perfilSentimientos];
+                  updated[i] = { ...updated[i], descripcion: e.target.value };
+                  updateData({ perfilSentimientos: updated });
+                }} placeholder="Descripcion" className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                <button onClick={() => updateData({ perfilSentimientos: data.perfilSentimientos.filter((_, idx) => idx !== i) })}
+                  className="text-red-400 hover:text-red-300 p-1"><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            <button onClick={() => updateData({ perfilSentimientos: [...data.perfilSentimientos, { label: '', descripcion: '' }] })}
+              className="text-[10px] text-slate-500 hover:text-orange-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar sentimiento
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* COMUNICACION */}
+      {section === 'comunicacion' && (
+        <div className="space-y-6">
+          {/* Evitar / Decir */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-emerald-400">Evitar / Decir</h3>
+            {data.comunicacionEvitar.map((item, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <Input value={item.evitar} onChange={(e) => {
+                  const updated = [...data.comunicacionEvitar];
+                  updated[i] = { ...updated[i], evitar: e.target.value };
+                  updateData({ comunicacionEvitar: updated });
+                }} placeholder="Evitar" className="bg-slate-900 border-red-500/20 text-slate-200 text-xs" />
+                <Input value={item.decir} onChange={(e) => {
+                  const updated = [...data.comunicacionEvitar];
+                  updated[i] = { ...updated[i], decir: e.target.value };
+                  updateData({ comunicacionEvitar: updated });
+                }} placeholder="Decir" className="bg-slate-900 border-emerald-500/20 text-slate-200 text-xs" />
+                <button onClick={() => updateData({ comunicacionEvitar: data.comunicacionEvitar.filter((_, idx) => idx !== i) })}
+                  className="text-red-400 hover:text-red-300 p-1"><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            <button onClick={() => updateData({ comunicacionEvitar: [...data.comunicacionEvitar, { evitar: '', decir: '' }] })}
+              className="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar par
+            </button>
+          </div>
+
+          {/* Tono */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-emerald-400">Tono y Estilo</h3>
+            {data.comunicacionTono.map((item, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={item} onChange={(e) => {
+                  const updated = [...data.comunicacionTono];
+                  updated[i] = e.target.value;
+                  updateData({ comunicacionTono: updated });
+                }} className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                <button onClick={() => updateData({ comunicacionTono: data.comunicacionTono.filter((_, idx) => idx !== i) })}
+                  className="text-red-400 hover:text-red-300 p-1"><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            <button onClick={() => updateData({ comunicacionTono: [...data.comunicacionTono, ''] })}
+              className="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* LENGUAJE */}
+      {section === 'lenguaje' && (
+        <div className="space-y-6">
+          <div className="space-y-1.5">
+            <Label className="text-slate-300 text-xs">Introduccion al Lenguaje</Label>
+            <Textarea value={data.lenguajeIntro} onChange={(e) => updateData({ lenguajeIntro: e.target.value })}
+              rows={3} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none" />
+          </div>
+
+          {/* Claves */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-pink-400">Claves del Lenguaje</h3>
+            {data.lenguajeClaves.map((clave, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="text-[10px] text-slate-500 font-mono pt-2">{i + 1}.</span>
+                <Textarea value={clave} onChange={(e) => {
+                  const updated = [...data.lenguajeClaves];
+                  updated[i] = e.target.value;
+                  updateData({ lenguajeClaves: updated });
+                }} rows={2} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none flex-1" />
+                <button onClick={() => updateData({ lenguajeClaves: data.lenguajeClaves.filter((_, idx) => idx !== i) })}
+                  className="text-red-400 hover:text-red-300 p-1"><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            <button onClick={() => updateData({ lenguajeClaves: [...data.lenguajeClaves, ''] })}
+              className="text-[10px] text-slate-500 hover:text-pink-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar clave
+            </button>
+          </div>
+
+          {/* Ejemplos */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-pink-400">Ejemplos Practicos</h3>
+            {data.lenguajeEjemplos.map((ej, i) => (
+              <div key={i} className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 space-y-1.5">
+                <div className="flex gap-2">
+                  <Input value={ej.contexto} onChange={(e) => {
+                    const updated = [...data.lenguajeEjemplos];
+                    updated[i] = { ...updated[i], contexto: e.target.value };
+                    updateData({ lenguajeEjemplos: updated });
+                  }} placeholder="Contexto" className="bg-slate-900 border-slate-700 text-slate-200 text-xs flex-1" />
+                  <button onClick={() => updateData({ lenguajeEjemplos: data.lenguajeEjemplos.filter((_, idx) => idx !== i) })}
+                    className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+                <Textarea value={ej.frase} onChange={(e) => {
+                  const updated = [...data.lenguajeEjemplos];
+                  updated[i] = { ...updated[i], frase: e.target.value };
+                  updateData({ lenguajeEjemplos: updated });
+                }} placeholder="Frase ejemplo" rows={2} className="bg-slate-900 border-slate-700 text-slate-200 text-xs resize-none" />
+              </div>
+            ))}
+            <button onClick={() => updateData({ lenguajeEjemplos: [...data.lenguajeEjemplos, { contexto: '', frase: '' }] })}
+              className="text-[10px] text-slate-500 hover:text-pink-400 flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Agregar ejemplo
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ===== ADMIN RECURSOS COMPONENT =====
 function AdminRecursos() {
@@ -365,6 +698,7 @@ export function Admin() {
   const { lineas, puntos, addLinea, editLinea, removeLinea, addPunto, editPunto, removePunto } = useLineas();
   const { notas, addNota, editNota, removeNota } = useNotas();
   const { centros: centrosUPZ, setCentroUPZ } = useUPZRef();
+  const { labels: textLabels, addLabel, editLabel, removeLabel } = useTextLabels();
 
   const [tab, setTab] = useState<AdminTab>('pins');
   // UPZ seleccionada para definir punto de referencia
@@ -384,6 +718,10 @@ export function Admin() {
   // Punto state
   const [puntoForm, setPuntoForm] = useState<PuntoFormData>(emptyPuntoForm);
   const [editingPuntoId, setEditingPuntoId] = useState<string | null>(null);
+
+  // Label state
+  const [labelForm, setLabelForm] = useState<LabelFormData>(emptyLabelForm);
+  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
 
   // Nota state
   const [notaForm, setNotaForm] = useState<NotaFormData>(emptyNotaForm);
@@ -429,6 +767,12 @@ export function Admin() {
       setLineCoords((prev) => [...prev, [lat, lng] as [number, number]]);
     } else if (tab === 'puntos') {
       setPuntoForm((prev) => ({
+        ...prev,
+        latitud: lat.toFixed(6),
+        longitud: lng.toFixed(6),
+      }));
+    } else if (tab === 'labels') {
+      setLabelForm((prev) => ({
         ...prev,
         latitud: lat.toFixed(6),
         longitud: lng.toFixed(6),
@@ -598,6 +942,42 @@ export function Admin() {
     setPuntoForm(emptyPuntoForm);
   };
 
+  // ===== LABEL CRUD =====
+  const handleLabelSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const labelData = {
+      texto: labelForm.texto,
+      latitud: parseFloat(labelForm.latitud),
+      longitud: parseFloat(labelForm.longitud),
+      fontSize: labelForm.fontSize,
+      color: labelForm.color,
+      rotacion: labelForm.rotacion,
+    };
+    if (editingLabelId) {
+      editLabel(editingLabelId, labelData);
+      showMessage('success', 'Texto actualizado');
+      setEditingLabelId(null);
+    } else {
+      addLabel(labelData);
+      showMessage('success', 'Texto agregado al mapa');
+    }
+    setLabelForm(emptyLabelForm);
+  };
+
+  const handleEditLabel = (label: import('@/types').TextoLabel) => {
+    setLabelForm({
+      texto: label.texto,
+      latitud: label.latitud.toString(),
+      longitud: label.longitud.toString(),
+      fontSize: label.fontSize,
+      color: label.color,
+      rotacion: label.rotacion,
+    });
+    setEditingLabelId(label.id);
+    setSubTab('form');
+    setTab('labels');
+  };
+
   // ===== NOTA CRUD =====
   const handleNotaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -698,6 +1078,8 @@ export function Admin() {
     { key: 'notas', label: 'Notas', icon: <StickyNote className="w-4 h-4" />, count: notas.length },
     { key: 'refupz', label: 'Ref. UPZ', icon: <Crosshair className="w-4 h-4" /> },
     { key: 'recursos', label: 'Recursos', icon: <FolderOpen className="w-4 h-4" /> },
+    { key: 'analisis', label: 'Analisis', icon: <MessageCircle className="w-4 h-4" /> },
+    { key: 'labels', label: 'Textos', icon: <Type className="w-4 h-4" />, count: textLabels.length },
   ];
 
   const getUPZBarrios = (upzNombre: string) => {
@@ -782,8 +1164,8 @@ export function Admin() {
             ))}
           </div>
 
-          {/* Sub Tabs - ocultos cuando es refupz */}
-          {tab !== 'refupz' && (
+          {/* Sub Tabs - ocultos cuando es refupz, recursos o analisis */}
+          {tab !== 'refupz' && tab !== 'recursos' && tab !== 'analisis' && (
             <div className="flex border-b border-slate-800">
               <button
                 onClick={() => setSubTab('form')}
@@ -796,6 +1178,7 @@ export function Admin() {
                 {tab === 'pins' && (editingPinId ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
                 {tab === 'lineas' && (editingLineaId ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
                 {tab === 'puntos' && (editingPuntoId ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
+                {tab === 'labels' && (editingLabelId ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
                 {tab === 'notas' && (editingNotaId ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
                 {subTab === 'form' ? 'Formulario' : 'Lista'}
               </button>
@@ -827,6 +1210,7 @@ export function Admin() {
                   isAdmin={true}
                   lineas={lineas}
                   puntosLinea={puntos}
+                  textLabels={textLabels}
                       />
                 <div className="absolute top-2 left-2 z-[1000] bg-slate-950/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-cyan-500/20">
                   <p className="text-xs text-cyan-400 flex items-center gap-1.5">
@@ -895,6 +1279,9 @@ export function Admin() {
           ) : tab === 'recursos' ? (
             /* ===== RECURSOS EDITOR ===== */
             <AdminRecursos />
+          ) : tab === 'analisis' ? (
+            /* ===== ANALISIS EDITOR ===== */
+            <AdminAnalisis />
           ) : subTab === 'form' ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-0">
               {/* Map */}
@@ -908,6 +1295,7 @@ export function Admin() {
                   isAdmin={true}
                   lineas={lineas}
                   puntosLinea={puntos}
+                  textLabels={textLabels}
                       />
                 <div className="absolute top-2 left-2 z-[1000] bg-slate-950/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-cyan-500/20">
                   <p className="text-xs text-cyan-400 flex items-center gap-1.5">
@@ -1582,6 +1970,63 @@ export function Admin() {
                     </form>
                   )}
 
+                  {/* ===== LABEL FORM ===== */}
+                  {tab === 'labels' && (
+                    <form onSubmit={handleLabelSubmit} className="space-y-4">
+                      <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                        {editingLabelId ? <Edit3 className="w-5 h-5 text-pink-400" /> : <Plus className="w-5 h-5 text-pink-400" />}
+                        {editingLabelId ? 'Editar Texto' : 'Nuevo Texto en Mapa'}
+                      </h2>
+                      <div className="space-y-1.5">
+                        <Label className="text-slate-300 text-xs">Texto *</Label>
+                        <Input value={labelForm.texto} onChange={(e) => setLabelForm({ ...labelForm, texto: e.target.value })} placeholder="Ej: Barrio El Rincon" required
+                          className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-slate-300 text-xs">Latitud *</Label>
+                          <Input type="number" step="any" value={labelForm.latitud} onChange={(e) => setLabelForm({ ...labelForm, latitud: e.target.value })} placeholder="4.743100" required
+                            className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 font-mono text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-slate-300 text-xs">Longitud *</Label>
+                          <Input type="number" step="any" value={labelForm.longitud} onChange={(e) => setLabelForm({ ...labelForm, longitud: e.target.value })} placeholder="-74.074000" required
+                            className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50 font-mono text-sm" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-slate-300 text-xs">Tamaño de fuente: {labelForm.fontSize}px</Label>
+                        <Slider value={[labelForm.fontSize]} onValueChange={(v) => setLabelForm({ ...labelForm, fontSize: v[0] })} min={8} max={32} step={1}
+                          className="py-2" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-slate-300 text-xs">Rotacion: {labelForm.rotacion}°</Label>
+                        <Slider value={[labelForm.rotacion]} onValueChange={(v) => setLabelForm({ ...labelForm, rotacion: v[0] })} min={-180} max={180} step={5}
+                          className="py-2" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-slate-300 text-xs">Color</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {COLORS.map((c) => (
+                            <button key={c} type="button" onClick={() => setLabelForm({ ...labelForm, color: c })}
+                              className={`w-8 h-8 rounded-lg border-2 transition-all ${labelForm.color === c ? 'border-white scale-110' : 'border-transparent hover:border-white/30'}`}
+                              style={{ background: c }} />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex gap-3 pt-4">
+                        <Button type="submit" className="flex-1 bg-pink-500 hover:bg-pink-600 text-white font-semibold">
+                          <Save className="w-4 h-4 mr-2" />
+                          {editingLabelId ? 'Actualizar' : 'Guardar'} Texto
+                        </Button>
+                        {editingLabelId && (
+                          <Button type="button" variant="outline" onClick={() => { setEditingLabelId(null); setLabelForm(emptyLabelForm); }}
+                            className="border-slate-700 text-slate-400 hover:bg-slate-800"><X className="w-4 h-4 mr-2" />Cancelar</Button>
+                        )}
+                      </div>
+                    </form>
+                  )}
+
                   {/* ===== NOTA FORM ===== */}
                   {tab === 'notas' && (
                     <form onSubmit={handleNotaSubmit} className="space-y-4">
@@ -1779,6 +2224,51 @@ export function Admin() {
                                 <p className="text-xs text-red-400 flex-1">¿Eliminar este punto?</p>
                                 <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(null)} className="border-slate-700 text-slate-400">Cancelar</Button>
                                 <Button variant="destructive" size="sm" onClick={() => { removePunto(punto.id); setShowDeleteConfirm(null); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* LABEL LIST */}
+                {tab === 'labels' && (
+                  <>
+                    {textLabels.length === 0 ? (
+                      <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-slate-800">
+                        <Type className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+                        <p className="text-slate-500">No hay textos en el mapa</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {textLabels.map((label) => (
+                          <motion.div key={label.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-colors">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold" style={{ color: label.color, textShadow: `0 0 8px ${label.color}80` }}>{label.texto}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{label.fontSize}px</span>
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{label.rotacion}°</span>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-1 font-mono">{label.latitud.toFixed(4)}, {label.longitud.toFixed(4)}</p>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button variant="ghost" size="sm" onClick={() => handleEditLabel(label)}
+                                  className="text-slate-400 hover:text-pink-400 hover:bg-pink-500/10"><Edit3 className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(`label-${label.id}`)}
+                                  className="text-slate-400 hover:text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
+                              </div>
+                            </div>
+                            {showDeleteConfirm === `label-${label.id}` && (
+                              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-3">
+                                <p className="text-xs text-red-400 flex-1">¿Eliminar este texto?</p>
+                                <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(null)} className="border-slate-700 text-slate-400">Cancelar</Button>
+                                <Button variant="destructive" size="sm" onClick={() => { removeLabel(label.id); setShowDeleteConfirm(null); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
                               </motion.div>
                             )}
                           </motion.div>
