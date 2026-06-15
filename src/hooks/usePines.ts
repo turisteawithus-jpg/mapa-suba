@@ -23,13 +23,17 @@ export function usePines() {
 
   // Al montar, forzar recarga desde localStorage (navegacion admin -> mapa)
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved !== null) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setPines(parsed);
-      } catch { /* ignore */ }
-    }
+    const reload = () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null) {
+        try { const parsed = JSON.parse(saved); if (Array.isArray(parsed)) setPines(parsed); } catch { /* */ }
+      }
+    };
+    reload();
+    // Recargar tambien cuando el usuario vuelve a la pestana
+    const handleVisibility = () => { if (!document.hidden) reload(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   // Guardar en localStorage y notificar a otros componentes
