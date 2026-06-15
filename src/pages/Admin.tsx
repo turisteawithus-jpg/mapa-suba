@@ -23,6 +23,7 @@ import {
   Video,
   MessageCircle,
   Type,
+  Download,
 } from 'lucide-react';
 // Import local: AdminAnalisis se importa arriba como componente externo
 import { Button } from '@/components/ui/button';
@@ -47,13 +48,14 @@ import { useUPZRef } from '@/hooks/useUPZRef';
 import { useRecursos } from '@/hooks/useRecursos';
 import { useTextLabels } from '@/hooks/useTextLabels';
 import { AdminAnalisis } from '@/components/AdminAnalisis';
+import { AdminExportador } from '@/components/AdminExportador';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
 
 
 
-type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz' | 'recursos' | 'analisis' | 'labels';
+type AdminTab = 'pins' | 'lineas' | 'puntos' | 'notas' | 'refupz' | 'recursos' | 'analisis' | 'labels' | 'exportar';
 
 // ========== PIN FORM ==========
 interface PinFormData {
@@ -771,6 +773,7 @@ export function Admin() {
     { key: 'recursos', label: 'Recursos', icon: <FolderOpen className="w-4 h-4" /> },
     { key: 'analisis', label: 'Analisis', icon: <MessageCircle className="w-4 h-4" /> },
     { key: 'labels', label: 'Textos', icon: <Type className="w-4 h-4" />, count: textLabels.length },
+    { key: 'exportar', label: 'Exportar', icon: <Download className="w-4 h-4" /> },
   ];
 
   const getUPZBarrios = (upzNombre: string) => {
@@ -856,7 +859,7 @@ export function Admin() {
           </div>
 
           {/* Sub Tabs - ocultos cuando es refupz, recursos o analisis */}
-          {tab !== 'refupz' && tab !== 'recursos' && tab !== 'analisis' && (
+          {tab !== 'refupz' && tab !== 'recursos' && tab !== 'analisis' && tab !== 'exportar' && (
             <div className="flex border-b border-slate-800">
               <button
                 onClick={() => setSubTab('form')}
@@ -973,6 +976,9 @@ export function Admin() {
           ) : tab === 'analisis' ? (
             /* ===== ANALISIS EDITOR ===== */
             <AdminAnalisis />
+          ) : tab === 'exportar' ? (
+            /* ===== EXPORTAR DATOS ===== */
+            <AdminExportador />
           ) : subTab === 'form' ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-0">
               {/* Map */}
