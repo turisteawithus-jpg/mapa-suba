@@ -18,10 +18,13 @@ export interface Pin {
   imagen_url: string;
   imagen_descarga_url: string;
   video_url: string;
-    notas: NotaPin[];     // Notas acumuladas dentro del pin
+  notas: NotaPin[];     // Notas acumuladas dentro del pin
   creado_at: string;
+  // Galeria de imagenes multiples (URLs)
   galeria_imagenes?: string[];
+  // Galeria de videos multiples
   galeria_videos?: { url: string; titulo: string }[];
+  tamano?: number;
 }
 
 export interface PuntoLinea {
@@ -37,9 +40,11 @@ export interface PuntoLinea {
   imagen_descarga_url: string;
   video_url: string;
   orden: number;
-    notas: NotaPin[];     // Notas acumuladas dentro del punto
+  notas: NotaPin[];     // Notas acumuladas dentro del punto
   creado_at: string;
+  // Galeria de imagenes multiples (URLs)
   galeria_imagenes?: string[];
+  // Galeria de videos multiples
   galeria_videos?: { url: string; titulo: string }[];
 }
 
