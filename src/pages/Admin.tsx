@@ -49,6 +49,7 @@ import { useRecursos } from '@/hooks/useRecursos';
 import { useTextLabels } from '@/hooks/useTextLabels';
 import { AdminAnalisis } from '@/components/AdminAnalisis';
 import { AdminExportador } from '@/components/AdminExportador';
+import { ExportarPrompt } from '@/components/ExportarPrompt';
 import { NotaEditor } from '@/components/NotaPanel';
 import { upzData } from '@/data/upz-data';
 import type { Pin, NotaPin } from '@/types';
@@ -426,6 +427,7 @@ export function Admin() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clerkReady, setClerkReady] = useState(false);
+  const [cambiosPendientes, setCambiosPendientes] = useState(0);
   const mapaRef = useRef<MapaSubaHandle>(null);
 
   useEffect(() => {
@@ -480,6 +482,57 @@ export function Admin() {
     showMessage('success', `Coordenadas capturadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
   }, [tab, upzRefSeleccionada, setCentroUPZ, showMessage]);
 
+  // ===== GUARDAR PARA PRODUCCION (SUPABASE) =====
+  const handleGuardarProduccion = async () => {
+    const { supabase, MAP_DATA_TABLE } = await import('@/lib/supabase');
+
+    // Leer datos del localStorage
+    let pinesData: unknown[] = [];
+    let lineasData: unknown[] = [];
+    let puntosData: unknown[] = [];
+    let labelsData: unknown[] = [];
+
+    try {
+      const saved = localStorage.getItem('suba_pines');
+      if (saved) pinesData = JSON.parse(saved);
+    } catch { /* */ }
+    try {
+      const savedL = localStorage.getItem('suba_lineas');
+      if (savedL) lineasData = JSON.parse(savedL);
+    } catch { /* */ }
+    try {
+      const savedP = localStorage.getItem('suba_puntos_linea');
+      if (savedP) puntosData = JSON.parse(savedP);
+    } catch { /* */ }
+    try {
+      const saved = localStorage.getItem('suba_texto_labels');
+      if (saved) labelsData = JSON.parse(saved);
+    } catch { /* */ }
+
+    if (pinesData.length === 0 && lineasData.length === 0 && labelsData.length === 0) {
+      showMessage('error', 'No hay datos guardados. Crea pines, lineas o textos primero.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const rows = [
+      { id: 'pines', tipo: 'pines', data: pinesData, updated_at: timestamp },
+      { id: 'lineas', tipo: 'lineas', data: lineasData, updated_at: timestamp },
+      { id: 'puntos', tipo: 'puntos', data: puntosData, updated_at: timestamp },
+      { id: 'labels', tipo: 'labels', data: labelsData, updated_at: timestamp },
+    ];
+
+    const { error } = await supabase.from(MAP_DATA_TABLE).upsert(rows, { onConflict: 'id' });
+
+    if (error) {
+      showMessage('error', 'Error guardando: ' + error.message);
+      return;
+    }
+
+    setCambiosPendientes(0);
+    showMessage('success', 'Datos guardados en la nube. Los usuarios los veran automaticamente.');
+  };
+
   // ===== PIN CRUD =====
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -508,6 +561,7 @@ export function Admin() {
       addPin(pinData);
       showMessage('success', 'Pin creado correctamente');
     }
+    setCambiosPendientes((p) => p + 1);
     setPinForm(emptyPinForm);
     setIsSubmitting(false);
   };
@@ -583,6 +637,7 @@ export function Admin() {
       addLinea({ ...lineaData, visible: true });
       showMessage('success', 'Línea creada correctamente');
     }
+    setCambiosPendientes((p) => p + 1);
     setLineaForm(emptyLineaForm);
     setLineCoords([]);
   };
@@ -632,6 +687,7 @@ export function Admin() {
       });
       showMessage('success', 'Punto creado correctamente');
     }
+    setCambiosPendientes((p) => p + 1);
     setPuntoForm(emptyPuntoForm);
   };
 
@@ -654,6 +710,7 @@ export function Admin() {
       addLabel(labelData);
       showMessage('success', 'Texto agregado al mapa');
     }
+    setCambiosPendientes((p) => p + 1);
     setLabelForm(emptyLabelForm);
   };
 
@@ -811,6 +868,18 @@ export function Admin() {
           <div className="p-4 border-b border-slate-800">
             <h2 className="text-sm font-semibold text-slate-300">Administración</h2>
             <p className="text-xs text-slate-500 mt-1">Gestión del mapa de Suba</p>
+            <button
+              onClick={handleGuardarProduccion}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-lg transition-all"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Guardar para Producción
+            </button>
+            {cambiosPendientes > 0 && (
+              <p className="text-[10px] text-amber-400 mt-1.5 text-center">
+                {cambiosPendientes} cambio{cambiosPendientes > 1 ? 's' : ''} sin guardar
+              </p>
+            )}
           </div>
           <nav className="p-2 space-y-1">
             {tabs.map((t) => (
@@ -1828,7 +1897,7 @@ export function Admin() {
                               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-3">
                                 <p className="text-xs text-red-400 flex-1">¿Eliminar este pin?</p>
                                 <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(null)} className="border-slate-700 text-slate-400">Cancelar</Button>
-                                <Button variant="destructive" size="sm" onClick={() => { removePin(pin.id); setShowDeleteConfirm(null); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
+                                <Button variant="destructive" size="sm" onClick={() => { removePin(pin.id); setShowDeleteConfirm(null); setCambiosPendientes((p) => p + 1); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
                               </motion.div>
                             )}
                           </motion.div>
@@ -1874,7 +1943,7 @@ export function Admin() {
                               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-3">
                                 <p className="text-xs text-red-400 flex-1">¿Eliminar esta línea y todos sus puntos?</p>
                                 <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(null)} className="border-slate-700 text-slate-400">Cancelar</Button>
-                                <Button variant="destructive" size="sm" onClick={() => { removeLinea(linea.id); setShowDeleteConfirm(null); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
+                                <Button variant="destructive" size="sm" onClick={() => { removeLinea(linea.id); setShowDeleteConfirm(null); setCambiosPendientes((p) => p + 1); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
                               </motion.div>
                             )}
                           </motion.div>
@@ -1920,7 +1989,7 @@ export function Admin() {
                               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-3">
                                 <p className="text-xs text-red-400 flex-1">¿Eliminar este punto?</p>
                                 <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(null)} className="border-slate-700 text-slate-400">Cancelar</Button>
-                                <Button variant="destructive" size="sm" onClick={() => { removePunto(punto.id); setShowDeleteConfirm(null); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
+                                <Button variant="destructive" size="sm" onClick={() => { removePunto(punto.id); setShowDeleteConfirm(null); setCambiosPendientes((p) => p + 1); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
                               </motion.div>
                             )}
                           </motion.div>
@@ -1965,7 +2034,7 @@ export function Admin() {
                               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-3">
                                 <p className="text-xs text-red-400 flex-1">¿Eliminar este texto?</p>
                                 <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(null)} className="border-slate-700 text-slate-400">Cancelar</Button>
-                                <Button variant="destructive" size="sm" onClick={() => { removeLabel(label.id); setShowDeleteConfirm(null); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
+                                <Button variant="destructive" size="sm" onClick={() => { removeLabel(label.id); setShowDeleteConfirm(null); setCambiosPendientes((p) => p + 1); }} className="bg-red-600 hover:bg-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminar</Button>
                               </motion.div>
                             )}
                           </motion.div>
@@ -2023,6 +2092,12 @@ export function Admin() {
         </main>
       </div>
     </div>
+
+    {/* Banner de exportacion persistente */}
+    <ExportarPrompt
+      cambiosPendientes={cambiosPendientes}
+      onDescartar={() => setCambiosPendientes(0)}
+    />
     </>
   );
 }
