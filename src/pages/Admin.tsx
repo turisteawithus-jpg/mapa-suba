@@ -65,6 +65,7 @@ interface PinFormData {
   notas: NotaPin[];
   galeria_imagenes: string[];
   galeria_videos: { url: string; titulo: string }[];
+  tamano: number;
 }
 
 const emptyPinForm: PinFormData = {
@@ -81,6 +82,7 @@ const emptyPinForm: PinFormData = {
   notas: [],
   galeria_imagenes: [],
   galeria_videos: [],
+  tamano: 28,
 };
 
 // ========== LINEA FORM ==========
@@ -459,6 +461,7 @@ export function Admin() {
       notas: pinForm.notas,
       galeria_imagenes: pinForm.galeria_imagenes,
       galeria_videos: pinForm.galeria_videos,
+      tamano: pinForm.tamano,
     };
     if (editingPinId) {
       editPin(editingPinId, pinData);
@@ -487,6 +490,7 @@ export function Admin() {
       notas: [...pin.notas],
       galeria_imagenes: pin.galeria_imagenes ? [...pin.galeria_imagenes] : [],
       galeria_videos: pin.galeria_videos ? [...pin.galeria_videos] : [],
+      tamano: pin.tamano || 28,
     });
     setEditingPinId(pin.id);
     setSubTab('form');
@@ -978,6 +982,23 @@ export function Admin() {
                         <Label className="text-slate-300 text-xs">URL de Video (YouTube)</Label>
                         <Input type="url" value={pinForm.video_url} onChange={(e) => setPinForm({ ...pinForm, video_url: e.target.value })} placeholder="https://youtube.com/watch?v=..."
                           className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-cyan-500/50" />
+                      </div>
+
+                      {/* Tamaño del Pin */}
+                      <div className="space-y-1.5">
+                        <Label className="text-slate-300 text-xs flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                          Tamaño del pin: {pinForm.tamano}px
+                        </Label>
+                        <Slider
+                          value={[pinForm.tamano]}
+                          onValueChange={(v) => setPinForm({ ...pinForm, tamano: v[0] })}
+                          min={16}
+                          max={48}
+                          step={2}
+                          className="py-2"
+                        />
+                        <p className="text-[10px] text-slate-600">Arrastra para cambiar el tamaño del pin en el mapa</p>
                       </div>
 
                       {/* Galeria de Imagenes */}
