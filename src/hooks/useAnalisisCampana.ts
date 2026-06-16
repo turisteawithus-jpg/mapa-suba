@@ -475,7 +475,10 @@ const DEFAULT_DATA: AnalisisData = {
 function loadData(): AnalisisData {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_DATA, ...parsed, reglasDeOro: parsed.reglasDeOro || DEFAULT_DATA.reglasDeOro };
+    }
   } catch { /* ignore */ }
   return DEFAULT_DATA;
 }
