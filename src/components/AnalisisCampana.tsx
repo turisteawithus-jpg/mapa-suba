@@ -82,7 +82,7 @@ function SectionResumen({ data }: { data: ReturnType<typeof useAnalisisCampana>[
           <span className="text-[10px] text-slate-500 ml-2">Manual de Mensajes</span>
         </div>
         <div className="grid grid-cols-1 gap-2">
-          {data.reglasDeOro.map((regla) => (
+          {(data.reglasDeOro || []).map((regla) => (
             <div key={regla.numero} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-all">
               <span className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center flex-shrink-0 font-bold">{regla.numero}</span>
               <div>
