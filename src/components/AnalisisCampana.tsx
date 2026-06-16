@@ -16,14 +16,13 @@ import {
   CheckCircle2,
   XCircle,
   Radio,
-  Eye,
-  TrendingUp,
   Shield,
   Wallet,
   Heart,
   TrendingUp as TrendingUpIcon,
   Download,
   Menu,
+  Crown,
 } from 'lucide-react';
 import { useAnalisisCampana } from '@/hooks/useAnalisisCampana';
 
@@ -75,19 +74,23 @@ function SectionResumen({ data }: { data: ReturnType<typeof useAnalisisCampana>[
         <p className="text-sm text-slate-300 leading-relaxed">{data.resumenEjecutivo}</p>
       </div>
 
-      {/* Contraste */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-purple-500/15 bg-purple-500/5 p-4">
-          <h3 className="text-xs font-bold text-purple-400 mb-3 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> CAMBIOS ESTRUCTURALES</h3>
-          <ul className="space-y-2">{data.contrasteCambios.map((c, i) => (<li key={i} className="flex gap-2 text-[11px] text-slate-400"><span className="text-purple-400 mt-0.5">+</span><span>{c}</span></li>))}</ul>
+      {/* 10 Reglas de Oro del Manual de Mensajes */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Crown className="w-4 h-4 text-amber-400" />
+          <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">10 Reglas de Oro de la Comunicacion</h3>
+          <span className="text-[10px] text-slate-500 ml-2">Manual de Mensajes</span>
         </div>
-        <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4">
-          <h3 className="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> SE MANTIENEN</h3>
-          <ul className="space-y-2">{data.contrasteMantiene.map((c, i) => (<li key={i} className="flex gap-2 text-[11px] text-slate-400"><span className="text-emerald-400 mt-0.5">=</span><span>{c}</span></li>))}</ul>
-        </div>
-        <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4">
-          <h3 className="text-xs font-bold text-amber-400 mb-3 flex items-center gap-2"><Eye className="w-4 h-4" /> ELEMENTOS NUEVOS</h3>
-          <ul className="space-y-2">{data.contrasteNuevo.map((c, i) => (<li key={i} className="flex gap-2 text-[11px] text-slate-400"><span className="text-amber-400 mt-0.5">!</span><span>{c}</span></li>))}</ul>
+        <div className="grid grid-cols-1 gap-2">
+          {data.reglasDeOro.map((regla) => (
+            <div key={regla.numero} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-all">
+              <span className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center flex-shrink-0 font-bold">{regla.numero}</span>
+              <div>
+                <h4 className="text-xs font-semibold text-amber-300 mb-0.5">{regla.titulo}</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed">{regla.descripcion}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
