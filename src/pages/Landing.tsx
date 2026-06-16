@@ -86,10 +86,16 @@ export function Landing({ onEnter }: LandingProps) {
 
       const current = slideRef.current;
       if (e.deltaY > 30 && current < SLIDES.length - 1) {
+        // Scroll hacia abajo: avanzar slide
         isScrolling.current = true;
         setCurrentSlide(current + 1);
         setTimeout(() => { isScrolling.current = false; }, 700);
+      } else if (e.deltaY > 30 && current === SLIDES.length - 1) {
+        // En el ultimo slide, scroll hacia abajo ingresa al mapa
+        isScrolling.current = true;
+        onEnter();
       } else if (e.deltaY < -30 && current > 0) {
+        // Scroll hacia arriba: retroceder slide
         isScrolling.current = true;
         setCurrentSlide(current - 1);
         setTimeout(() => { isScrolling.current = false; }, 700);
@@ -109,6 +115,8 @@ export function Landing({ onEnter }: LandingProps) {
         const current = slideRef.current;
         if (deltaY > 0 && current < SLIDES.length - 1) {
           setCurrentSlide(current + 1);
+        } else if (deltaY > 0 && current === SLIDES.length - 1) {
+          onEnter();
         } else if (deltaY < 0 && current > 0) {
           setCurrentSlide(current - 1);
         }
@@ -303,13 +311,15 @@ export function Landing({ onEnter }: LandingProps) {
               </div>
 
               <motion.div className="text-center pt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-                <button
+                <p className="text-slate-500 text-xs mb-4">Desplaza hacia abajo para ingresar al mapa</p>
+                <motion.button
                   onClick={onEnter}
-                  className="group inline-flex items-center gap-3 px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-base rounded-xl transition-all shadow-lg shadow-cyan-500/20"
+                  className="flex flex-col items-center gap-2 text-slate-500 hover:text-cyan-400 transition-colors mx-auto"
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
                 >
-                  <MapPin className="w-5 h-5" />
-                  INGRESAR AL MAPA
-                </button>
+                  <ChevronDown className="w-6 h-6" />
+                </motion.button>
                 <p className="text-slate-600 text-[10px] mt-4 uppercase tracking-widest">Localidad de Suba, Bogota — Campana 2026</p>
               </motion.div>
             </motion.div>
