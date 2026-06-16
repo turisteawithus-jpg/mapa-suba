@@ -94,6 +94,9 @@ export interface AnalisisData {
   lenguajeClaves: string[];
   lenguajeEjemplos: { contexto: string; frase: string }[];
 
+  // 12. Reglas de Oro (Manual de Mensajes)
+  reglasDeOro: { numero: number; titulo: string; descripcion: string }[];
+
   // Documento PDF
   pdfUrl: string;
 }
@@ -447,6 +450,20 @@ const DEFAULT_DATA: AnalisisData = {
     { contexto: 'En un conjunto residencial', frase: '"Se que el arriendo subio y la plata no alcanza. Nuestra propuesta es concreta: apoyo directo a familias, no promesas vacias."' },
     { contexto: 'Frente a un comerciante', frase: '"Usted mantiene este barrio con su trabajo. Nosotros proponemos credito accesible y proteccion contra la extorsion. Caiga quien caiga."' },
     { contexto: 'Con una madre de familia', frase: '"Entiendo su preocupacion por los jovenes. Nuestro programa les da oportunidades reales, no los deja solos."' },
+  ],
+
+  // 12. Reglas de Oro (Manual de Mensajes)
+  reglasDeOro: [
+    { numero: 1, titulo: 'Siempre hablamos de propuestas, no de personas', descripcion: 'La gente no quiere ver peleas politicas. Quiere saber que se va a hacer por su barrio, por su familia, por su futuro. Las propuestas concretas son nuestra fortaleza: los siete programas de bienestar, la seguridad inteligente, la austeridad republicana. Cuando hablamos de propuestas, ganamos.' },
+    { numero: 2, titulo: 'No criticamos a otros precandidatos ni candidatos', descripcion: 'El contraste es informativo, no agresivo. Mostramos las diferencias con hechos y datos, no con insultos ni descalificaciones. La gente de Suba valora el respeto. Si atacamos, nos igualamos a lo que critican. Si proponemos, nos diferenciamos.' },
+    { numero: 3, titulo: 'Defendemos el campo', descripcion: 'La Alianza Nacional Alimentaria, los mercados campesinos, las compras publicas al campo: todo esto trae comida fresca y barata a los barrios urbanos. Defendemos al campesino porque tambien defendemos el bolsillo de la familia de Suba.' },
+    { numero: 4, titulo: 'Empezamos por lo emotivo', descripcion: 'Antes de explicar un programa, conectamos con el sentimiento. "Se que le preocupa la inseguridad", "Entiendo que la plata no alcanza". Cuando la gente siente que la entendemos, abre la puerta a escuchar las propuestas.' },
+    { numero: 5, titulo: 'Resaltamos el trabajo comunitario', descripcion: 'El trabajo de las Juntas de Accion Comunal, los lideres de barrio, las organizaciones locales: eso es lo que sostiene los territorios. Resaltamos a quienes trabajan en su comunidad porque ellos son el verdadero cambio.' },
+    { numero: 6, titulo: 'Desde lo territorial y local', descripcion: 'No hablamos de Colombia como abstraccion. Hablamos de Suba, de su conjunto residencial, de su tienda, de su TransMilenio. Cada mensaje debe sentirse como si fuera hecho para ese barrio especifico.' },
+    { numero: 7, titulo: 'Somos especialistas en conectar con las emociones de las personas', descripcion: 'No somos una maquina de sloganes. Somos personas hablando con personas. Usamos historias reales, ejemplos concretos, palabras que lleguen al corazon. La emocion bien usada construye confianza.' },
+    { numero: 8, titulo: 'Hacemos pedagogia politica', descripcion: 'Explicamos por que las cosas pasan y como las vamos a cambiar. No damos ordenes ni promesas vacias. Educamos sobre la politica porque un elector informado es un elector que vota con conviccion.' },
+    { numero: 9, titulo: 'La pedagogia del miedo no es nuestra estrategia', descripcion: 'No ganamos asustando. No usamos el miedo como herramienta electoral. Ofrecemos esperanza con base en propuestas reales. El votante de Suba ya tiene suficientes miedos: lo que necesita son soluciones.' },
+    { numero: 10, titulo: 'La unidad: el enfasis de nuestra estrategia', descripcion: 'Hablamos de "nosotros", no de "yo". De construir pais entre todos, no de salvadores individuales. La unidad es nuestra fuerza: unidad del campo y la ciudad, del joven y el adulto mayor, de todas las regiones.' },
   ],
 
   // Documento
